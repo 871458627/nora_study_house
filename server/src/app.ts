@@ -100,6 +100,17 @@ function registerErrorHandling(app: FastifyInstance): void {
       reply.code(413).send({ ok: false, error: errorEnvelope('payload_too_large') })
       return
     }
+    // @fastify/rate-limit：errorResponseBuilder 生成的统一错误体对象会作为 error
+    // 传入（无 statusCode 属性），按形态识别并映射回 429。
+    const rateLimitBody = error as { ok?: unknown; error?: { code?: unknown } }
+    if (rateLimitBody.ok === false && rateLimitBody.error?.code === 'rate_limited') {
+      reply.code(429).send({ ok: false, error: errorEnvelope('rate_limited') })
+      return
+    }
+    if (statusCode === 429 || frameworkCode === 'FST_ERR_RATE_LIMIT') {
+      reply.code(429).send({ ok: false, error: errorEnvelope('rate_limited') })
+      return
+    }
     if (statusCode === 400) {
       reply.code(400).send({ ok: false, error: errorEnvelope('invalid_body') })
       return
