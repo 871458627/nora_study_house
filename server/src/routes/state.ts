@@ -1,13 +1,16 @@
-// 状态两接口（docs/02 §3.2，CAS 语义平移自 v1 functions/handler.mjs）。鉴权/限速：
-// - GET /api/v1/state  鉴权：Bearer access token；限速：无（读侧无写放大，读频由前端 60s 定时器约束）
-// - PUT /api/v1/state  鉴权：Bearer access token；限速：60 次/分钟/账号（键 = accountId）
-// - 其余方法 → 405 + Allow: GET, PUT（v1 method_not_allowed 语义，docs/02 §3.2 错误码表）
+// 状态接口 + 环形历史只读视图（docs/02 §3.2，CAS 语义平移自 v1 functions/handler.mjs）。
+// 鉴权/限速：
+// - GET /api/v1/state          鉴权：Bearer access；限速：无（读侧无写放大）
+// - PUT /api/v1/state          鉴权：Bearer access；限速：60 次/分钟/账号（键 = accountId）
+// - GET /api/v1/state/history  鉴权：Bearer access；限速：无（只读恢复视图，docs/07 数据回退路径）
+// - 其余方法 → 405 + Allow 头（v1 method_not_allowed 语义）
 // 所有响应（含错误）一律 cache-control: no-store（v1 handler.mjs:5-9 平移）。
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify'
 import { AppError } from '../errors.js'
-import type { AccessTokenClaims, AccessTokenIssuer } from '../lib/jwt.js'
+import type { AccessTokenIssuer } from '../lib/jwt.js'
 import type { StateService } from '../services/stateService.js'
 import type { RateWindow } from './auth.js'
+import { mustHaveUser, requireAuth } from './guard.js'
 import { statePutSchema } from './schemas.js'
 
 const MAX_STATE_BODY_BYTES = 256 * 1024
@@ -16,22 +19,6 @@ export type StateRouteDeps = {
   stateService: StateService
   issuer: AccessTokenIssuer
   rateLimits: { put: RateWindow }
-}
-
-function requireAuth(issuer: AccessTokenIssuer) {
-  return async (request: FastifyRequest): Promise<void> => {
-    const header = request.headers.authorization
-    if (typeof header !== 'string' || !header.toLowerCase().startsWith('bearer ')) throw new AppError('unauthorized')
-    const token = header.slice(7).trim()
-    if (!token) throw new AppError('unauthorized')
-    request.principal = issuer.verifyAccessToken(token)
-  }
-}
-
-function mustHaveUser(request: FastifyRequest): AccessTokenClaims {
-  const principal = request.principal
-  if (!principal) throw new AppError('unauthorized')
-  return principal
 }
 
 // v1 parseWriteBody 的信封前置校验（handler.mjs:148-163）：content-type 预检
@@ -43,9 +30,11 @@ async function enforceContentRules(request: FastifyRequest): Promise<void> {
   if (Number.isFinite(declared) && declared > MAX_STATE_BODY_BYTES) throw new AppError('payload_too_large')
 }
 
-async function methodNotAllowed(_request: FastifyRequest, reply: FastifyReply): Promise<void> {
-  reply.header('allow', 'GET, PUT')
-  throw new AppError('method_not_allowed')
+function methodNotAllowed(allow: string) {
+  return async (_request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+    reply.header('allow', allow)
+    throw new AppError('method_not_allowed')
+  }
 }
 
 export const stateRoutes: FastifyPluginAsync<StateRouteDeps> = async (app, deps) => {
@@ -87,7 +76,14 @@ export const stateRoutes: FastifyPluginAsync<StateRouteDeps> = async (app, deps)
     },
   )
 
-  app.post('/state', methodNotAllowed)
-  app.delete('/state', methodNotAllowed)
-  app.patch('/state', methodNotAllowed)
+  app.get('/state/history', { onRequest: [auth] }, async (request) => {
+    const history = await deps.stateService.history(mustHaveUser(request).fid)
+    return { ok: true, history }
+  })
+
+  const stateNotAllowed = methodNotAllowed('GET, PUT')
+  app.post('/state', stateNotAllowed)
+  app.delete('/state', stateNotAllowed)
+  app.patch('/state', stateNotAllowed)
+  app.post('/state/history', methodNotAllowed('GET'))
 }

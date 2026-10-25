@@ -51,6 +51,18 @@ export class StateService {
     return { data: row.data, revision: row.revision, updatedAt: row.updatedAt.toISOString() }
   }
 
+  /** 环形历史只读视图（docs/07 数据回退路径）：按 revision 降序，最多 HISTORY_SLOTS 条。 */
+  async history(
+    familyId: string,
+  ): Promise<Array<{ data: Record<string, unknown>; revision: number; updatedAt: string }>> {
+    const rows = await callRepo(() => this.deps.repo.state.listHistory(familyId))
+    return rows.map((row) => ({
+      data: row.data,
+      revision: row.revision,
+      updatedAt: row.updatedAt.toISOString(),
+    }))
+  }
+
   async put(familyId: string, input: PutStateInput): Promise<StateRecord> {
     const now = this.deps.clock()
     const current = await callRepo(() => this.deps.repo.state.findByFamilyId(familyId))

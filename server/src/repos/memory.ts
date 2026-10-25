@@ -21,6 +21,9 @@ export class MemoryRepository implements Repository {
   private readonly stateByFamilyId = new Map<string, StateRecord>()
   private readonly historyByFamilySlot = new Map<string, HistoryRecord>()
   private readonly securityEventLog: SecurityEventRecord[] = []
+  /** 插入序号：createdAt 同毫秒时的确定性次级排序（测试可重复性的基础设施保障）。 */
+  private readonly securityEventSeq = new Map<string, number>()
+  private securityEventCounter = 0
 
   async ping(): Promise<void> {
     /* memory store is always reachable */
@@ -133,12 +136,14 @@ export class MemoryRepository implements Repository {
         createdAt: input.now,
       }
       this.securityEventLog.push(record)
+      this.securityEventCounter += 1
+      this.securityEventSeq.set(record.id, this.securityEventCounter)
       return record
     },
     listByFamily: async (familyId: string, limit: number): Promise<SecurityEventRecord[]> =>
       this.securityEventLog
         .filter((event) => event.familyId === familyId)
-        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime() || (this.securityEventSeq.get(b.id) ?? 0) - (this.securityEventSeq.get(a.id) ?? 0))
         .slice(0, limit),
   }
 }

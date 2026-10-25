@@ -10,7 +10,7 @@ cd server
 npm install
 npx prisma generate        # 生成 Prisma Client（编译 prisma.ts 需要）
 npm run check              # tsc --noEmit
-npm run test               # vitest run（42 例，全内存仓储，无需 Docker/Postgres）
+npm run test               # vitest run（57 例，全内存仓储，无需 Docker/Postgres）
 npm run dev                # 本地起服务（无 DATABASE_URL 时自动退化为内存仓储并打 warn）
 ```
 
@@ -67,6 +67,9 @@ test/            vitest 用例（auth 14 / state 26 / health 2）
 | POST /auth/logout | refresh cookie | 30 次/分钟/IP | 吊销当前 refresh、清 cookie |
 | GET /state | Bearer access | 无（读侧无写放大） | 空态 `{ok:true,data:null,revision:0}`；一律 `cache-control: no-store` |
 | PUT /state | Bearer access | 60 次/分钟/账号 | 信封校验（schemaVersion===1、baseRevision 安全整数、415/413/400）；CAS 409 附云端最新；RISK-01 防线 400 `archive_wiped` |
+| GET /state/history | Bearer access | 无 | 环形历史只读视图（revision 降序，≤5 版），docs/07 数据回退路径 |
+| GET /security-events | Bearer access | 无 | `?limit=1..100`（默认 20）；家长区审计列表（PIN 重置/隐私确认/refresh 复用） |
+| POST /security-events | Bearer access | 10 次/分钟/账号 | type 白名单 `pin-reset` / `privacy-confirm`；detail ≤16 键，服务端注入 accountId 归因 |
 | GET /health | 无 | 无 | 200/503；不泄露拓扑 |
 
 统一错误体 `{ok:false,error:{code,message}}`；错误码集中定义于 `src/errors.ts`。
@@ -75,8 +78,9 @@ CAS 与请求校验语义逐条平移自 v1 `functions/handler.mjs`（对照表�
 ## 测试策略（交付约束：不依赖 Docker/Postgres）
 
 `buildApp(options)` 支持注入：内存仓储、配置（含随机 JWT secret）、时钟、各限速参数。
-42 个用例覆盖任务交付清单全部场景（注册/登录/限速/轮换/复用全量吊销/登出、CAS 全链、
-413/415/400、archive_wiped、环形历史写 7 存 5、no-store、503 无泄漏、405/404、health 两态）。
+57 个用例覆盖任务交付清单全部场景（注册/登录/限速/轮换/复用全量吊销/登出、CAS 全链、
+413/415/400、archive_wiped、环形历史写 7 存 5、no-store、503 无泄漏、405/404、health 两态，
+以及 security-events 白名单/limit 边界/归因注入与 /state/history 恢复视图）。
 Prisma 实现按「代码成立（可编译、依赖可安装、`prisma generate` 通过）」交付；
 真实 PostgreSQL 语义（唯一键插入竞争、事务等）的集成用例列入遗留事项。
 
@@ -96,6 +100,5 @@ Prisma 实现按「代码成立（可编译、依赖可安装、`prisma generate
 ## 遗留事项
 
 - Prisma/PostgreSQL 集成用例（真实库事务、插入竞争 409、`prisma migrate deploy` 流程）待 Docker 环境就绪后补充。
-- docs/02 §3.4 security-events 对外接口（GET/POST）本期未实现（任务范围外），service/仓储已具备写入能力。
 - docs/02 §7.10 push/report 路由为 P1 预留，未建骨架。
 - 多家长共管（第二个账号加入既有 family）未实现（docs/02 §7.11 演进预留）。

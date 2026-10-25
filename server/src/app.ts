@@ -19,7 +19,9 @@ import { MemoryRepository } from './repos/memory.js'
 import { createPrismaRepository } from './repos/prisma.js'
 import { authRoutes, type RateWindow } from './routes/auth.js'
 import { healthRoutes } from './routes/health.js'
+import { securityEventsRoutes } from './routes/securityEvents.js'
 import { stateRoutes } from './routes/state.js'
+import { AuditService } from './services/auditService.js'
 import { AuthService } from './services/authService.js'
 import { StateService } from './services/stateService.js'
 
@@ -27,6 +29,7 @@ export interface RateLimitsConfig {
   register: RateWindow
   authCookie: RateWindow
   statePut: RateWindow
+  securityEventPost: RateWindow
 }
 
 export interface BuildAppOptions {
@@ -43,6 +46,7 @@ const DEFAULT_RATE_LIMITS: RateLimitsConfig = {
   register: { max: 3, timeWindow: 60 * 60 * 1000 },
   authCookie: { max: 30, timeWindow: 60 * 1000 },
   statePut: { max: 60, timeWindow: 60 * 1000 },
+  securityEventPost: { max: 10, timeWindow: 60 * 1000 },
 }
 const DEFAULT_LOGIN_RATE_LIMIT = { max: 5, windowMs: 15 * 60 * 1000 }
 
@@ -158,6 +162,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   }
 
   const authService = new AuthService({ repo, issuer, clock, refreshTokenTtlSeconds: config.refreshTokenTtlSeconds })
+  const auditService = new AuditService({ repo, clock })
   const stateService = new StateService({
     repo,
     clock,
@@ -180,6 +185,12 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     rateLimits: { register: rateLimits.register, authCookie: rateLimits.authCookie },
   })
   await app.register(stateRoutes, { prefix: '/api/v1', stateService, issuer, rateLimits: { put: rateLimits.statePut } })
+  await app.register(securityEventsRoutes, {
+    prefix: '/api/v1',
+    auditService,
+    issuer,
+    rateLimits: { post: rateLimits.securityEventPost },
+  })
   await app.register(healthRoutes, { prefix: '/api/v1', repo, version: config.appVersion })
 
   await app.ready()

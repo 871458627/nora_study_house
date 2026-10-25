@@ -2,6 +2,11 @@
 // zod 细节只进 debug 日志，响应只给固定 code + message。
 import { z } from 'zod'
 import { isRecord } from '../lib/guards.js'
+import {
+  MAX_EVENT_DETAIL_KEYS,
+  MAX_SECURITY_EVENTS_RESPONSE,
+  REPORTABLE_EVENT_TYPES,
+} from '../services/auditService.js'
 
 // 用户名字符集 [a-z0-9_-]（大小写均收，service 统一小写化后判重）。
 const USERNAME_PATTERN = /^[a-zA-Z0-9_-]+$/
@@ -29,3 +34,17 @@ export const statePutSchema = z.object({
 })
 
 export type StatePut = z.infer<typeof statePutSchema>
+
+export const securityEventPostSchema = z.object({
+  type: z.enum(REPORTABLE_EVENT_TYPES),
+  detail: z
+    .record(z.unknown())
+    .nullish()
+    .refine((value) => value === null || value === undefined || Object.keys(value).length <= MAX_EVENT_DETAIL_KEYS),
+})
+
+export type SecurityEventPost = z.infer<typeof securityEventPostSchema>
+
+export const securityEventListQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(MAX_SECURITY_EVENTS_RESPONSE).default(20),
+})
