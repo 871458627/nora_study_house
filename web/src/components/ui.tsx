@@ -28,6 +28,31 @@ export function ProgressBar({
   );
 }
 
+/* iOS 健身式进度圆环：今日 x/y 项 */
+export function ProgressRing({ value, total }: { value: number; total: number }) {
+  const radius = 32;
+  const circumference = 2 * Math.PI * radius;
+  const ratio = total > 0 ? Math.max(0, Math.min(1, value / total)) : 0;
+  return (
+    <span className="progress-ring" role="img" aria-label={`今日进度 ${value} / ${total} 项`}>
+      <svg viewBox="0 0 76 76" aria-hidden="true">
+        <circle className="ring-track" cx="38" cy="38" r={radius} />
+        <circle
+          className="ring-fill"
+          cx="38"
+          cy="38"
+          r={radius}
+          strokeDasharray={`${(circumference * ratio).toFixed(1)} ${circumference.toFixed(1)}`}
+        />
+      </svg>
+      <b>
+        {value}
+        <small>/{total}</small>
+      </b>
+    </span>
+  );
+}
+
 export function SyncBadge({ compact = false }: { compact?: boolean }) {
   const { syncStatus, syncError } = useApp();
   const label =

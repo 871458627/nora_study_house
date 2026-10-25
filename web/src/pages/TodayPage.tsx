@@ -1,10 +1,9 @@
-import { useEffect, type CSSProperties } from 'react';
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../app/AppProvider';
 import { Icon, type IconName } from '../components/Icon';
 import { Mascot } from '../components/Mascot';
-import { ProgressBar, SubjectChip } from '../components/ui';
-import { SUBJECT_BY_ID } from '../data/content';
+import { ProgressBar, ProgressRing, SubjectChip } from '../components/ui';
 import { TASK_KIND_LABEL } from '../data/labels';
 import type { PlanTask, TaskKind } from '../data/types';
 import { formatMonthDayWeek, greeting, todayKey } from '../core/date';
@@ -22,39 +21,31 @@ const KIND_ICON: Record<TaskKind, IconName> = {
 };
 
 function TaskRow({ task, done }: { task: PlanTask; done: boolean }) {
-  const meta = SUBJECT_BY_ID[task.subject];
-  const subjectVars = { '--subject-color': meta.color, '--subject-soft': meta.soft } as CSSProperties;
   const content = (
     <>
-      <span className="task-icon" style={{ color: meta.color, background: meta.soft }}>
+      <span className={`task-icon t-${task.subject}`}>
         <Icon name={KIND_ICON[task.kind]} size={18} />
       </span>
       <span className="task-copy">
-        <span className="task-meta">
-          <SubjectChip subject={task.subject} size="small" />
-          <span>{TASK_KIND_LABEL[task.kind]}</span>
-          <span className="task-minutes">
-            <Icon name="clock" size={11} /> {task.minutes} 分钟
-          </span>
-        </span>
         <b>{task.title}</b>
-        <small>{task.subtitle}</small>
+        <small>
+          <SubjectChip subject={task.subject} size="small" /> {TASK_KIND_LABEL[task.kind]} · {task.subtitle}
+        </small>
+      </span>
+      <span className="task-minutes">
+        <Icon name="clock" size={11} /> {task.minutes} 分钟
       </span>
       <span className={`task-action ${done ? 'done' : ''}`}>
-        {done ? <Icon name="check" size={14} /> : <Icon name="chevron" size={16} />}
+        {done ? <Icon name="check" size={16} /> : <Icon name="chevron" size={16} />}
       </span>
     </>
   );
 
   if (done) {
-    return (
-      <div className="task-row done" style={subjectVars}>
-        {content}
-      </div>
-    );
+    return <div className="task-row done">{content}</div>;
   }
   return (
-    <Link to={`/task/${task.id}`} className="task-row" style={subjectVars}>
+    <Link to={`/task/${task.id}`} className="task-row">
       {content}
     </Link>
   );
@@ -89,39 +80,36 @@ export function TodayPage() {
   return (
     <div className="page today-page">
       <header className="page-head today-head">
-        <div>
-          <p className="eyebrow">今天 · {formatMonthDayWeek(date)}</p>
-          <h1>
+        <h1>今天</h1>
+        <span className="today-avatar" aria-hidden="true">
+          <Mascot mood={mood} equipped={state.pet.equipped} size={44} />
+        </span>
+      </header>
+      <div className="today-chips">
+        <span className="chip">
+          <Icon name="calendar" size={13} /> 今天 · {formatMonthDayWeek(date)}
+        </span>
+      </div>
+
+      <section className="today-hero card">
+        <ProgressRing value={done.length} total={tasks.length} />
+        <div className="today-hero-copy">
+          <h2>
             {greeting()}，{state.profile.nickname}。
-          </h1>
-          <p className="page-lede">
+          </h2>
+          <p className="hero-lede">
             {allDone
               ? '今天的计划已经做完了。剩下的时间，去和小桃玩一会儿吧。'
               : tasks.length
                 ? `今天有 ${remainingTasks.length} 件小事，做完就能攒桃粮。不用赶，按自己的节奏来。`
                 : '今天还没有安排，先去看看课本，或到设置里调整课表。'}
           </p>
-        </div>
-      </header>
-
-      <section className="today-hero card">
-        <div className="today-hero-copy">
-          <span className="hero-kicker">今日进度</span>
-          <div className="big-number">
-            {done.length}
-            <small> / {tasks.length} 项</small>
-          </div>
-          <ProgressBar value={percent} />
           <div className="hero-meta">
             <span>{Math.round(percent)}% 完成</span>
             <span>{remainingMinutes ? `还剩约 ${remainingMinutes} 分钟` : '今天的份额已完成'}</span>
+            <span>今天 +{foodEarnedToday} 桃粮</span>
+            <span>截止 {state.settings.deadlineHour}:00</span>
           </div>
-        </div>
-        <div className="today-mascot">
-          <Mascot mood={mood === 'sad' ? 'sad' : allDone ? 'celebrate' : mood} equipped={state.pet.equipped} size={104} />
-          <span className={`mood-bubble ${allDone ? 'warm' : ''}`}>
-            {allDone ? '我们做到啦！' : `今天 +${foodEarnedToday} 桃粮`}
-          </span>
         </div>
       </section>
 
