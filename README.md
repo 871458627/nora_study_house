@@ -23,7 +23,7 @@ PostgreSQL 16 + Prisma           families / accounts / family_state(JSONB+revisi
 
 | 路径 | 内容 |
 |---|---|
-| `docs/` | 交付文档：00 章程与迭代计划、01 需求规格、02 技术架构、03 开发规范、04 测试策略、05 UI 设计、06 交互文案、07 部署运维（生产基线）、08 免费托管部署（Render+Neon）、09 服务器自部署（同机同源 + 数据安全）、10 设备支持与数据迁移策略（第一期 Redmi Pad Pro） |
+| `docs/` | 交付文档：00 章程与迭代计划、01 需求规格、02 技术架构、03 开发规范、04 测试策略、05 UI 设计、06 交互文案、07 部署运维（生产基线）、08 免费托管部署（Render+Neon）、09 服务器自部署（同机同源 + 数据安全）、10 设备支持与数据迁移策略（第一期 Redmi Pad Pro）、11 教材导入与内容生成设计（待评审） |
 | `web/` | React 18 + TS + Vite 前端（离线优先 + 云同步） |
 | `server/` | Fastify 后端（鉴权 + 状态 CAS 同步） |
 | `deploy/` | 服务器自部署包：Dockerfile、docker-compose（nginx+api+postgres）、TLS 引导脚本、加密备份/恢复脚本 |
