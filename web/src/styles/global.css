@@ -2260,7 +2260,6 @@ a.task-row:active {
   background: var(--surface);
   font-size: 20px;
   font-weight: 700;
-  box-shadow: 0 3px 0 rgba(56, 32, 44, 0.08);
   transition: background 0.12s var(--ease-soft), transform 0.1s var(--ease-soft),
     box-shadow 0.1s var(--ease-soft);
 }
@@ -2270,8 +2269,7 @@ a.task-row:active {
 }
 
 .key-btn:active:not(:disabled) {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 rgba(56, 32, 44, 0.08);
+  transform: scale(0.97);
 }
 
 .key-btn.quiet {
@@ -2347,7 +2345,6 @@ a.task-row:active {
   background: var(--surface);
   font-size: 13.5px;
   font-weight: 500;
-  box-shadow: 0 3px 0 rgba(56, 32, 44, 0.06);
   transition: border-color 0.14s var(--ease-soft), background 0.14s var(--ease-soft),
     transform 0.12s var(--ease-soft), box-shadow 0.12s var(--ease-soft);
 }
@@ -2357,8 +2354,7 @@ a.task-row:active {
 }
 
 .pool-item:active:not(:disabled) {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 rgba(56, 32, 44, 0.06);
+  transform: scale(0.97);
 }
 
 .pool-item.used {
@@ -2398,7 +2394,6 @@ a.task-row:active {
   font-size: 13px;
   line-height: 1.45;
   text-align: left;
-  box-shadow: 0 3px 0 rgba(56, 32, 44, 0.06);
   transition: border-color 0.14s var(--ease-soft), background 0.14s var(--ease-soft),
     opacity 0.14s var(--ease-soft), transform 0.12s var(--ease-soft),
     box-shadow 0.12s var(--ease-soft);
@@ -2413,8 +2408,7 @@ a.task-row:active {
 }
 
 .match-item:active:not(:disabled) {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 rgba(56, 32, 44, 0.06);
+  transform: scale(0.97);
 }
 
 .match-item.active {
@@ -2707,23 +2701,22 @@ a.task-row:active {
   width: 96px;
   height: 96px;
   border-radius: 50%;
-  background: linear-gradient(148deg, var(--brand), var(--accent));
+  background: var(--accent);
   color: #fff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 0 var(--accent-edge), 0 16px 32px rgba(212, 47, 103, 0.3);
-  transition: transform 0.14s var(--ease-soft), box-shadow 0.14s var(--ease-soft);
+  box-shadow: 0 10px 24px rgba(0, 113, 227, 0.28);
+  transition: transform 0.14s var(--ease-soft), box-shadow 0.14s var(--ease-soft),
+    background 0.14s var(--ease-soft);
 }
 
 .speaker-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 0 var(--accent-edge), 0 18px 36px rgba(212, 47, 103, 0.34);
+  background: var(--accent-deep);
 }
 
 .speaker-button:active {
-  transform: translateY(3px);
-  box-shadow: 0 3px 0 var(--accent-edge), 0 10px 22px rgba(212, 47, 103, 0.26);
+  transform: scale(0.95);
 }
 
 .listen-area b {
@@ -2799,19 +2792,17 @@ a.task-row:active {
   font-size: 21px;
   font-weight: 600;
   letter-spacing: 0.06em;
-  box-shadow: 0 3px 0 rgba(56, 32, 44, 0.06);
   transition: border-color 0.14s var(--ease-soft), background 0.14s var(--ease-soft),
     transform 0.12s var(--ease-soft), box-shadow 0.12s var(--ease-soft);
 }
 
 .dictation-option:hover:not(:disabled) {
   border-color: #c8c8ce;
-  background: #fffafc;
+  background: #fafafc;
 }
 
 .dictation-option:active:not(:disabled) {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 rgba(56, 32, 44, 0.06);
+  transform: scale(0.97);
 }
 
 .dictation-option.correct {
@@ -4730,16 +4721,16 @@ a.task-row:active {
 }
 
 .modal-close:hover {
-  background: #efe6df;
+  background: #dcdce2;
   color: var(--ink);
 }
 
 .modal-warning {
   padding: 10px 12px;
-  border: 1px solid #f0c8d5;
+  border: 1px solid #fbd0d2;
   border-radius: 12px;
-  background: #fff5f7;
-  color: #9d2d4d;
+  background: #ffebee;
+  color: #b3261e;
   font-size: 11.5px;
   line-height: 1.6;
   text-align: left;
@@ -4770,14 +4761,7 @@ a.task-row:active {
 
 .pending-conflict-icon {
   display: inline-flex;
-  color: #b5566f;
-  flex-shrink: 0;
-}
-
-.pending-conflict .text-link {
-  min-height: 32px;
-  padding: 0 4px;
-  white-space: nowrap;
+  color: var(--accent);
   flex-shrink: 0;
 }
 
@@ -4924,7 +4908,7 @@ a.task-row:active {
 }
 
 .toast svg {
-  color: #f6b9cb;
+  color: #ffd60a;
   flex-shrink: 0;
 }
 
@@ -6186,6 +6170,7 @@ a.task-row:active {
   min-height: 44px;
   padding: 0 10px;
   margin: 0;
+  flex-shrink: 0;
   font-weight: 600;
   white-space: nowrap;
 }
