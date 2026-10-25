@@ -3,16 +3,10 @@ import { useApp } from '../app/AppProvider';
 import { Icon } from '../components/Icon';
 import { Mascot } from '../components/Mascot';
 import { PET_SKINS } from '../data/pets';
-import { moodLine, petMood } from '../core/pet';
-import { todayKey } from '../core/date';
 
 /** 宠物商城：每日学习攒星星 → 兑换伙伴（用户需求 2026-10-25 / FR-P1-01 宠物部分） */
 export function ShopPage() {
   const { state, dispatchLocal, notify } = useApp();
-  const date = todayKey();
-  const hour = new Date().getHours();
-  const mood = petMood(state, date, hour);
-
   const buy = (petId: string, name: string, price: number) => {
     if (state.shop.owned.includes(petId)) return;
     if (state.rewards.stars < price) {
@@ -55,12 +49,12 @@ export function ShopPage() {
           return (
             <section key={skin.id} className={`card shop-card ${active ? 'active' : ''}`}>
               <div className="shop-card-art">
-                <Mascot mood={mood} equipped={state.pet.equipped} petId={skin.id} size={104} />
+                <Mascot mood="happy" petId={skin.id} size={104} animated />
                 {active && <span className="shop-active-pill">陪伴中</span>}
               </div>
               <b>{skin.name}</b>
               <small className="shop-tagline">{skin.tagline}</small>
-              <p className="shop-preview-note">{moodLine(mood, state.profile.nickname)}</p>
+              <p className="shop-preview-note">{skin.tagline === '安安静静陪你看书' ? '最喜欢窝在书页边打盹。' : skin.id === 'ningmeng' ? '笑起来有一点酸，靠近就变甜。' : skin.id === 'bobo' ? '一摇一摆，游泳比谁都快。' : skin.id === 'taoqi' ? '爱恶作剧，但也最护着你。' : skin.id === 'yunyun' ? '软乎乎的，做梦都在飘。' : '每天一点点，一起长大。'}</p>
               {owned ? (
                 <button
                   type="button"

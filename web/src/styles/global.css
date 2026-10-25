@@ -5841,3 +5841,19 @@ a.task-row:active {
   font-size: 12.5px;
   line-height: 1.55;
 }
+
+/* 呼吸感微动画（小伙伴形象）：3.2s 轻微上下浮动；
+   prefers-reduced-motion 的全局规则会将其时长归零 */
+.mascot-bob {
+  animation: mascot-bob 3.2s ease-in-out infinite;
+  transform-origin: 50% 92%;
+}
+
+@keyframes mascot-bob {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2.5px);
+  }
+}

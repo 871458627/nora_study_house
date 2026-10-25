@@ -68,7 +68,7 @@ export function PetPage() {
           </span>
           <div className="pet-stage-caption">{moodLine(mood, state.profile.nickname)}</div>
           <div className="pet-main">
-            <Mascot mood={mood} equipped={state.pet.equipped} petId={state.pet.skin} size={188} />
+            <Mascot mood={mood} equipped={state.pet.equipped} petId={state.pet.skin} size={188} animated />
           </div>
           <div className="pet-stage-foot">
             <div>
