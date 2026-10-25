@@ -4506,16 +4506,28 @@ a.task-row:active {
   margin-top: 24px;
 }
 
-.onboarding-steps i {
+/* 步骤指示条：已完成步可点击回退（i 元素升级为 button，保持细条外观） */
+.onboarding-steps button {
   width: 26px;
   height: 3px;
+  padding: 0;
+  border: none;
   border-radius: 999px;
-  background: #efe4dc;
-  transition: background 0.2s ease;
+  background: var(--fill);
+  cursor: pointer;
+  transition: background 0.2s var(--ease-soft), transform 0.2s var(--ease-soft);
 }
 
-.onboarding-steps i.on {
+.onboarding-steps button:disabled {
+  cursor: default;
+}
+
+.onboarding-steps button.on {
   background: var(--accent);
+}
+
+.onboarding-steps button.on:not(:disabled):hover {
+  transform: scaleY(2.2);
 }
 
 .onboarding-card {
