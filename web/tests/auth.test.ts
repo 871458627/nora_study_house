@@ -2,7 +2,8 @@
  * 钉死 src/app/auth.ts 家长账号契约（docs/02 §3.1）：register/login/refresh
  * 的请求形状与响应解析、无效凭据错误码透传、登出后的会话清理。
  * access token 只保存在内存，绝不写入任何 storage（docs/02 §5.3）。
- * 仅本契约模块与 tests/sync.test.ts 允许 stub globalThis.fetch（docs/03 §2.4）。
+ * 仅本契约模块、tests/sync.test.ts 与 tests/bindFlow.test.tsx 允许 stub
+ * globalThis.fetch（docs/03 §2.4 白名单）。
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import {

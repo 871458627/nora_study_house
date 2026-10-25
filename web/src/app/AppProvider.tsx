@@ -63,6 +63,8 @@ configureSync({ getAccessToken });
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'offline' | 'conflict' | 'logged_out';
 export type PinResult = 'ok' | 'wrong' | 'locked' | 'unset';
+/** 首次绑定拉取的结果：adopted=已接上云端进度，empty=云端还没有数据（docs/06 §3.10）。 */
+export type BindOutcome = 'adopted' | 'empty';
 
 export interface ConflictInfo {
   remote: RemoteState;
@@ -112,6 +114,9 @@ interface AppContextValue {
   parentLogin: (input: AuthFormsInput) => Promise<void>;
   parentRegister: (input: AuthFormsInput) => Promise<void>;
   parentLogout: () => Promise<void>;
+  bindLogin: (input: AuthFormsInput) => Promise<BindOutcome>;
+  bindRegister: (input: AuthFormsInput) => Promise<BindOutcome>;
+  bindPull: () => Promise<BindOutcome>;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -558,6 +563,44 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [pullOnce]);
 
+  /**
+   * 首次绑定的拉取（docs/06 §3.10）：登录成功且本机尚未初始化时立即取云端，
+   * 走一次 bootstrap 式 adopt——有数据直接接上（跳过昵称引导，只补本机 PIN），
+   * 没数据回到称呼步。失败原样抛出，由绑定卡片行内提示并保留「先离线使用」兜底。
+   * 注意它不等同于 resumeSyncAfterLogin：此刻本地未 onboarded，不能推送。
+   */
+  const bindPull = useCallback(async (): Promise<BindOutcome> => {
+    const remote = await runWithAuthRetry(() => fetchRemote());
+    if (remote.data) {
+      adoptRemote(remote);
+      return 'adopted';
+    }
+    return 'empty';
+  }, [adoptRemote, runWithAuthRetry]);
+
+  const bindLogin = useCallback(
+    async ({ username, password }: AuthFormsInput): Promise<BindOutcome> => {
+      await loginRequest(username, password);
+      setParentAccount(currentAccount());
+      loggedOutRef.current = false;
+      void flushSecurityEvents();
+      return await bindPull();
+    },
+    [bindPull],
+  );
+
+  /** 注册必然创建新家庭，云端必为空——直接回称呼步，不发起拉取。 */
+  const bindRegister = useCallback(
+    async ({ username, password }: AuthFormsInput): Promise<BindOutcome> => {
+      await registerRequest(username, password);
+      setParentAccount(currentAccount());
+      loggedOutRef.current = false;
+      void flushSecurityEvents();
+      return 'empty';
+    },
+    [],
+  );
+
   const parentLogin = useCallback(
     async ({ username, password }: AuthFormsInput) => {
       await loginRequest(username, password);
@@ -635,6 +678,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       parentLogin,
       parentRegister,
       parentLogout,
+      bindLogin,
+      bindRegister,
+      bindPull,
     }),
     [
       state,
@@ -663,6 +709,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       parentLogin,
       parentRegister,
       parentLogout,
+      bindLogin,
+      bindRegister,
+      bindPull,
     ],
   );
 

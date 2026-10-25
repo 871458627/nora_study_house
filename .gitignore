@@ -14,3 +14,4 @@ deploy/backup.key
 deploy/backups/
 deploy/certbot/
 deploy/nginx/conf.d/
+gui-test-screenshots/
