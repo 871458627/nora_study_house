@@ -1,5 +1,7 @@
 # Render Blueprint：免费档单服务同源部署（docs/08-免费部署指南.md）
-# 用法：Render 控制台 New → Blueprint → 指向本仓库；DATABASE_URL 两个服务都要填 Neon 连接串（sync: false 运行时输入）。
+# 用法：Render 控制台 New → Blueprint → 指向本仓库；DATABASE_URL 填 Neon 直连串（sync: false 运行时输入）。
+# 数据库迁移不在此编排（Blueprint 规范无一次性任务类型）：本机执行
+#   cd server && DATABASE_URL=<Neon直连串> npx prisma migrate deploy
 services:
   - type: web
     name: xiaotao-app
@@ -21,13 +23,3 @@ services:
       - key: DATABASE_URL
         sync: false
 
-  # 一次性迁移任务：首次部署与 schema 变更后在 Render 控制台手动 Run Job
-  - type: job
-    name: xiaotao-migrate
-    runtime: node
-    plan: free
-    buildCommand: cd server && npm ci --workspaces=false && npx prisma generate
-    startCommand: cd server && npx prisma migrate deploy
-    envVars:
-      - key: DATABASE_URL
-        sync: false
