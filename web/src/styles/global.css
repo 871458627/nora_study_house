@@ -903,8 +903,10 @@ button:disabled {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin: 2px 0 16px;
+  margin: 2px 0 12px;
 }
+
+
 
 .today-chips .chip {
   display: inline-flex;
@@ -5713,4 +5715,16 @@ a.task-row:active {
   color: var(--ink);
   letter-spacing: 0.14em;
   font-family: "Kaiti SC", KaiTi, STKaiti, "STSong", "Songti SC", serif;
+}
+
+/* 桌面端：统计条 2×2 展平为 1×4，避免 530px 级过宽卡片 */
+@media (min-width: 921px) {
+  .stat-strip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .stat {
+    padding: 14px 16px;
+  }
 }
