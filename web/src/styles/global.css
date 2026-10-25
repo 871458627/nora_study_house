@@ -331,7 +331,7 @@ button:disabled {
   border-radius: 999px;
   background: var(--fill);
   color: var(--sub);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -635,7 +635,7 @@ button:disabled {
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.75);
   color: var(--sub);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -703,7 +703,7 @@ button:disabled {
   border-radius: 999px;
   background: var(--fill);
   color: var(--sub);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -852,7 +852,7 @@ button:disabled {
 .pin-note {
   margin-top: 12px;
   color: var(--ter);
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1.65;
 }
 
@@ -1303,7 +1303,7 @@ a.task-row:active {
   gap: 10px;
   margin-top: 13px;
   color: var(--ter);
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 .rail-card {
@@ -1423,7 +1423,7 @@ a.task-row:active {
 
 .textbook-progress span {
   color: var(--ter);
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 .textbook-progress b {
@@ -1453,7 +1453,7 @@ a.task-row:active {
 
 .textbook-hero-actions p {
   color: var(--ter);
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1.65;
 }
 
@@ -1582,7 +1582,7 @@ a.task-row:active {
 
 .lesson-copy small {
   color: var(--ter);
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 .lesson-chevron {
@@ -1625,7 +1625,7 @@ a.task-row:active {
   background: var(--amber-soft);
   border-radius: 999px;
   padding: 2px 8px;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .mastery-card {
@@ -1639,7 +1639,7 @@ a.task-row:active {
 
 .mastery-card > span {
   color: var(--ter);
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 .mastery-dots {
@@ -1665,7 +1665,7 @@ a.task-row:active {
 
 .mastery-card small {
   color: var(--ter);
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1.6;
 }
 
@@ -1723,7 +1723,7 @@ a.task-row:active {
   border-radius: 50%;
   background: var(--rose-soft);
   color: var(--accent);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 650;
   display: inline-flex;
   align-items: center;
@@ -1824,7 +1824,7 @@ a.task-row:active {
   border-radius: 6px;
   background: #f6ede7;
   color: var(--sub);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
 }
 
@@ -1933,7 +1933,7 @@ a.task-row:active {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font-size: 10.5px;
+  font-size: 11px;
   white-space: nowrap;
 }
 
@@ -1965,7 +1965,7 @@ a.task-row:active {
 .afterclass-list li::before {
   content: counter(afterclass, decimal-leading-zero);
   color: var(--accent);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 650;
   padding-top: 3px;
 }
@@ -2238,7 +2238,7 @@ a.task-row:active {
 .numeric-display span {
   display: block;
   color: var(--ter);
-  font-size: 10.5px;
+  font-size: 11px;
   margin-bottom: 4px;
 }
 
@@ -2345,7 +2345,7 @@ a.task-row:active {
   border-radius: 7px;
   background: #fff;
   color: var(--accent);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 650;
   display: inline-flex;
   align-items: center;
@@ -2454,7 +2454,7 @@ a.task-row:active {
   display: block;
   margin-top: 2px;
   color: var(--accent);
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 .match-legend {
@@ -2536,7 +2536,7 @@ a.task-row:active {
   gap: 5px;
   margin-top: 14px;
   color: var(--ter);
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1.6;
   text-align: center;
 }
@@ -2792,7 +2792,7 @@ a.task-row:active {
 
 .pinyin-prompt span {
   color: var(--ter);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .pinyin-prompt b {
@@ -2866,7 +2866,7 @@ a.task-row:active {
 .dictation-type label span {
   display: block;
   color: var(--ter);
-  font-size: 10.5px;
+  font-size: 11px;
   margin-bottom: 5px;
 }
 
@@ -2958,7 +2958,7 @@ a.task-row:active {
 .word-card p small {
   display: block;
   color: var(--ter);
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 .word-sentence-speak {
@@ -2966,7 +2966,7 @@ a.task-row:active {
   align-items: center;
   gap: 4px;
   margin-top: 7px;
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 /* ============================================================
@@ -3077,7 +3077,7 @@ a.task-row:active {
   background: rgba(255, 255, 255, 0.85);
   border: 1px solid var(--line);
   color: var(--sub);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 500;
   flex-shrink: 0;
 }
@@ -3137,7 +3137,7 @@ a.task-row:active {
 
 .pet-stats small {
   color: var(--ter);
-  font-size: 9.5px;
+  font-size: 11px;
   text-align: center;
 }
 
@@ -3159,13 +3159,13 @@ a.task-row:active {
 
 .growth-top span {
   color: var(--ter);
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 .growth-card p {
   margin-top: 9px;
   color: var(--ter);
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1.65;
 }
 
@@ -3236,7 +3236,7 @@ a.task-row:active {
 
 .wardrobe-item small {
   color: var(--ter);
-  font-size: 9.5px;
+  font-size: 11px;
   line-height: 1.45;
 }
 
@@ -3301,7 +3301,7 @@ a.task-row:active {
 
 .badge-card small {
   color: var(--ter);
-  font-size: 9.5px;
+  font-size: 11px;
   line-height: 1.45;
 }
 
@@ -3374,7 +3374,7 @@ a.task-row:active {
 
 .heat-head span {
   color: var(--ter);
-  font-size: 9.5px;
+  font-size: 11px;
 }
 
 .heat-legend {
@@ -3386,7 +3386,7 @@ a.task-row:active {
 
 .heat-legend span {
   color: var(--ter);
-  font-size: 9px;
+  font-size: 11px;
   text-align: center;
 }
 
@@ -3447,12 +3447,12 @@ a.task-row:active {
 .mastery-line-head > span:last-child {
   margin-left: auto;
   color: var(--ter);
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 .mastery-line small {
   color: var(--ter);
-  font-size: 9.5px;
+  font-size: 11px;
 }
 
 /* 学科掌握度进度条与学科色 token 同源（chinese/math/english） */
@@ -3509,13 +3509,13 @@ a.task-row:active {
 }
 
 .records-badge b {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
 }
 
 .records-badge small {
   color: var(--ter);
-  font-size: 9px;
+  font-size: 11px;
   line-height: 1.4;
 }
 
@@ -3559,7 +3559,7 @@ a.task-row:active {
 
 .mistake-copy small {
   color: var(--ter);
-  font-size: 9.5px;
+  font-size: 11px;
 }
 
 .mistake-row > svg {
@@ -3633,7 +3633,7 @@ a.task-row:active {
 
 .free-summary small {
   color: var(--ter);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .records-rail {
@@ -3694,7 +3694,7 @@ a.task-row:active {
 
 .due-word small {
   color: var(--ter);
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: 0.03em;
 }
 
@@ -3716,7 +3716,7 @@ a.task-row:active {
 
 .rail-empty {
   color: var(--ter);
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1.65;
 }
 
@@ -3744,7 +3744,7 @@ a.task-row:active {
 
 .records-mini-stats small {
   color: var(--ter);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 /* ============================================================
@@ -3789,7 +3789,7 @@ a.task-row:active {
 
 .report-summary small {
   color: var(--ter);
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 .report-summary b {
@@ -3808,7 +3808,7 @@ a.task-row:active {
 
 .report-summary p {
   color: var(--ter);
-  font-size: 9.5px;
+  font-size: 11px;
   line-height: 1.5;
 }
 
@@ -3862,13 +3862,13 @@ a.task-row:active {
 
 .report-free-stats small {
   color: var(--ter);
-  font-size: 9.5px;
+  font-size: 11px;
 }
 
 .report-free-note {
   margin-top: 11px;
   color: var(--ter);
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1.65;
 }
 
@@ -3896,7 +3896,7 @@ a.task-row:active {
   border-radius: 7px;
   background: var(--rose-soft);
   color: var(--accent);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 650;
   display: inline-flex;
   align-items: center;
@@ -3920,12 +3920,12 @@ a.task-row:active {
 
 .weak-copy small {
   color: var(--ter);
-  font-size: 9.5px;
+  font-size: 11px;
 }
 
 .report-note {
   color: var(--ter);
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1.7;
   text-align: center;
   max-width: 620px;
@@ -4008,7 +4008,7 @@ a.task-row:active {
   max-width: 470px;
   margin-top: 1px;
   color: var(--ter);
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1.6;
 }
 
@@ -4047,7 +4047,7 @@ a.task-row:active {
 .current-lesson-copy span {
   display: block;
   color: var(--ter);
-  font-size: 9.5px;
+  font-size: 11px;
 }
 
 .current-lesson-copy b {
@@ -4061,7 +4061,7 @@ a.task-row:active {
   display: block;
   margin-top: 1px;
   color: var(--ter);
-  font-size: 9.5px;
+  font-size: 11px;
   line-height: 1.5;
 }
 
@@ -4140,7 +4140,7 @@ a.task-row:active {
 
 .sync-grid span {
   color: var(--ter);
-  font-size: 9.5px;
+  font-size: 11px;
 }
 
 .sync-grid b {
@@ -4190,7 +4190,7 @@ a.task-row:active {
 
 .settings-rail-card p {
   color: var(--sub);
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1.7;
 }
 
@@ -4236,7 +4236,7 @@ a.task-row:active {
   justify-content: center;
   height: 26px;
   color: var(--ter);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
 }
 
@@ -4249,7 +4249,7 @@ a.task-row:active {
   align-items: center;
   justify-content: center;
   color: var(--ter);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .timetable-cell select {
@@ -4260,7 +4260,7 @@ a.task-row:active {
   border-radius: 8px;
   background: var(--surface);
   color: var(--sub);
-  font-size: 10.5px;
+  font-size: 11px;
   cursor: pointer;
 }
 
@@ -4470,11 +4470,9 @@ a.task-row:active {
    引导
    ============================================================ */
 
+/* iOS 设置页式干净灰白底；品牌暖色只保留吉祥物本身 */
 .onboarding-root {
-  background:
-    radial-gradient(60% 70% at 78% 18%, rgba(251, 234, 240, 0.9), transparent 65%),
-    radial-gradient(50% 60% at 12% 85%, rgba(232, 244, 239, 0.8), transparent 60%),
-    var(--bg);
+  background: var(--bg);
 }
 
 .onboarding-root > .onboarding {
@@ -4574,7 +4572,7 @@ a.task-row:active {
 
 .step-label {
   color: var(--accent);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 650;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -4637,13 +4635,13 @@ a.task-row:active {
 
 .minute-option > span {
   color: var(--ter);
-  font-size: 9.5px;
+  font-size: 11px;
 }
 
 .minute-option small {
   margin-top: 3px;
   color: var(--sub);
-  font-size: 9.5px;
+  font-size: 11px;
   line-height: 1.45;
 }
 
@@ -4667,7 +4665,7 @@ a.task-row:active {
 
 .mini-timetable-head span {
   color: var(--ter);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .mini-week {
@@ -4691,7 +4689,7 @@ a.task-row:active {
 }
 
 .mini-week span {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
 }
 
@@ -4854,7 +4852,7 @@ a.task-row:active {
 
 .compare-card > span {
   color: var(--ter);
-  font-size: 9.5px;
+  font-size: 11px;
 }
 
 .compare-card b {
@@ -4865,7 +4863,7 @@ a.task-row:active {
 
 .compare-card small {
   color: var(--ter);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .modal-actions {
@@ -4893,7 +4891,7 @@ a.task-row:active {
 
 .import-summary span {
   color: var(--ter);
-  font-size: 9.5px;
+  font-size: 11px;
 }
 
 .import-summary b {
@@ -5667,7 +5665,7 @@ a.task-row:active {
   transform: translateX(-50%);
   background: var(--accent);
   color: #fff;
-  font-size: 9.5px;
+  font-size: 11px;
   padding: 1.5px 8px;
   border-radius: 999px;
 }
