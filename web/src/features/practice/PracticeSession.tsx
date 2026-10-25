@@ -316,6 +316,11 @@ export function PracticeSession({
       <div className="session-progress" aria-hidden="true">
         <i style={{ width: `${progress}%` }} />
       </div>
+      <div className="quiz-dots" aria-hidden="true">
+        {questions.map((_, i) => (
+          <i key={i} className={i < confirmedCount ? 'done' : i === index ? 'now' : ''} />
+        ))}
+      </div>
 
       <div className="session-body">
         <div className="quiz-head">

@@ -272,11 +272,10 @@ button:disabled {
 
 .eyebrow {
   display: block;
-  font-size: 11.5px;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--ter);
 }
 
 .page-lede {
@@ -732,19 +731,19 @@ button:disabled {
 .segmented {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 5px;
   padding: 4px;
-  border-radius: 16px;
+  border-radius: 14px;
   background: var(--fill);
 }
 
 .seg {
   min-height: 44px;
   padding: 0 16px;
-  border-radius: 12px;
+  border-radius: 11px;
   color: var(--sub);
   font-size: 13.5px;
-  font-weight: 700;
+  font-weight: 600;
   white-space: nowrap;
   transition: background 0.16s var(--ease-soft), color 0.16s var(--ease-soft),
     box-shadow 0.16s var(--ease-soft);
@@ -757,16 +756,9 @@ button:disabled {
 .seg.active {
   background: #fff;
   color: var(--ink);
-  box-shadow: 0 2px 6px rgba(56, 32, 44, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
-/* 学科 tab：激活时整块学科色填充（白字对学科色 ≥4.5:1）；
-   非激活态用中性色保证灰底上的可读性，色彩感交给激活块 */
-.seg.subject-seg.active {
-  background: var(--subject-color, var(--accent));
-  color: #fff;
-  box-shadow: 0 3px 0 rgba(56, 32, 44, 0.18);
-}
 
 .seg:disabled {
   opacity: 0.5;
