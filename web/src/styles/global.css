@@ -4753,16 +4753,16 @@ a.task-row:active {
   z-index: 90;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   width: max-content;
   max-width: calc(100vw - 28px);
-  padding: 9px 12px 9px 10px;
-  border: 1px solid #efd2da;
+  padding: 5px 6px 5px 14px;
+  border: 0.5px solid var(--line);
   border-radius: 999px;
-  background: rgba(255, 249, 251, 0.96);
-  box-shadow: 0 10px 28px rgba(29, 29, 31, 0.14);
+  background: var(--frost);
+  box-shadow: 0 10px 28px rgba(29, 29, 31, 0.16);
   color: var(--ink);
-  font-size: 11.5px;
+  font-size: 12.5px;
   line-height: 1.4;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -6175,4 +6175,28 @@ a.task-row:active {
 
 .praise-remove {
   flex-shrink: 0;
+}
+
+/* 悬浮横幅的操作钮：主操作实心胶囊、次操作文字链接，44px 触控。
+   覆写 .text-link 的负 margin（触控扩区技巧）——横幅内靠 gap 分隔，
+   负 margin 会吃掉 gap 导致两个操作钮互相叠压 */
+.pending-conflict .text-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 10px;
+  margin: 0;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pending-conflict .text-link.banner-cta {
+  background: var(--accent);
+  color: #fff;
+  border-radius: 999px;
+  padding: 0 16px;
+}
+
+.pending-conflict .text-link.banner-cta:active {
+  transform: scale(0.97);
 }

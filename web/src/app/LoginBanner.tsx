@@ -24,7 +24,7 @@ export function LoginBanner() {
         <Icon name="alert" size={15} />
       </span>
       <span>需要家长登录后才能同步，这台设备上的记录可以照常使用。</span>
-      <button type="button" className="text-link" onClick={() => navigate('/settings')}>
+      <button type="button" className="text-link banner-cta" onClick={() => navigate('/settings')}>
         去登录
       </button>
       <button type="button" className="text-link" onClick={() => setDismissed(true)}>
