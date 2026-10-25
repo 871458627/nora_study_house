@@ -7,6 +7,8 @@ export interface AppConfig {
   refreshTokenTtlSeconds: number
   cookieSecure: boolean
   databaseUrl: string
+  /** 前端构建产物目录（相对 cwd 或绝对）；空 = 不托管静态文件。同源部署前提（refresh cookie SameSite=Strict）。 */
+  webDistDir: string
   port: number
   host: string
   logLevel: string
@@ -60,6 +62,7 @@ export function loadConfig(options: LoadConfigOptions = {}): AppConfig {
     refreshTokenTtlSeconds,
     cookieSecure,
     databaseUrl: env.DATABASE_URL ?? '',
+    webDistDir: env.WEB_DIST_DIR ?? '',
     port,
     host: env.HOST ?? '0.0.0.0',
     logLevel: env.LOG_LEVEL ?? 'info',

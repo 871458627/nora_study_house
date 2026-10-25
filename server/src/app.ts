@@ -2,12 +2,14 @@
 // docs/03 §8.1）。导出 buildApp(options) 供测试注入内存仓储与配置；
 // 直接以 `tsx watch src/app.ts` / `node dist/src/app.js` 运行时启动 HTTP 服务。
 import path from 'node:path'
+import { existsSync, statSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import { PrismaClient } from '@prisma/client'
 import cookie from '@fastify/cookie'
+import fastifyStatic from '@fastify/static'
 import jwtPlugin from '@fastify/jwt'
 import rateLimitPlugin from '@fastify/rate-limit'
-import Fastify, { type FastifyBaseLogger, type FastifyInstance } from 'fastify'
+import Fastify, { type FastifyBaseLogger, type FastifyInstance, type FastifyReply } from 'fastify'
 import pino, { type Logger } from 'pino'
 import { loadConfig, type AppConfig } from './config.js'
 import { AppError, ERROR_DEFINITIONS, StateConflictError, type ErrorCode } from './errors.js'
@@ -35,6 +37,8 @@ export interface RateLimitsConfig {
 export interface BuildAppOptions {
   repo?: Repository
   config?: Partial<AppConfig>
+  /** 覆盖静态托管目录；undefined = 跟随 config.webDistDir，null = 强制关闭（测试默认）。 */
+  staticDir?: string | null
   clock?: Clock
   logger?: boolean | Logger
   rateLimits?: Partial<RateLimitsConfig>
@@ -192,6 +196,54 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     rateLimits: { post: rateLimits.securityEventPost },
   })
   await app.register(healthRoutes, { prefix: '/api/v1', repo, version: config.appVersion })
+
+  // 同源静态托管（docs/08 免费部署方案）：refresh cookie 是 SameSite=Strict，
+  // 前后端必须同域，因此由本服务直接服务 web/dist；目录缺失时跳过并告警。
+  const rawStaticDir = options.staticDir !== undefined ? options.staticDir : config.webDistDir
+  const staticRoot = rawStaticDir ? path.resolve(process.cwd(), rawStaticDir) : null
+  if (staticRoot && existsSync(staticRoot)) {
+    // wildcard:false 时插件仍会为 root 下真实文件预注册精确路由，
+    // 缓存策略必须放在注册级 setHeaders（对插件路由与 sendFile 统一生效）：
+    // index.html no-store、assets/* 内容哈希长缓存、根级文件协商缓存。
+    await app.register(fastifyStatic, {
+      root: staticRoot,
+      wildcard: false,
+      index: false,
+      setHeaders: (res, filePath) => {
+        const relative = path.relative(staticRoot, filePath).split(path.win32.sep).join('/')
+        if (relative === 'index.html') res.setHeader('Cache-Control', 'no-store')
+        else if (relative.startsWith('assets/')) res.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
+        else res.setHeader('Cache-Control', 'no-cache')
+      },
+    })
+    const sendIndex = (reply: FastifyReply) => reply.sendFile('index.html')
+    app.get('/', async (_request, reply) => sendIndex(reply))
+    app.get('/*', async (request, reply) => {
+      const urlPath = (request.raw.url ?? '/').split('?')[0] ?? '/'
+      // API 命名空间不走 SPA 兜底，保持 JSON 404 契约。
+      if (urlPath.startsWith('/api/')) return reply.callNotFound()
+      let relative = ''
+      try {
+        relative = decodeURIComponent(urlPath.slice(1))
+      } catch {
+        relative = ''
+      }
+      if (relative && !relative.includes('..') && !relative.startsWith('/')) {
+        let isFile = false
+        try {
+          isFile = statSync(path.join(staticRoot, relative)).isFile()
+        } catch {
+          isFile = false
+        }
+        if (isFile) {
+          return reply.sendFile(relative)
+        }
+      }
+      return sendIndex(reply)
+    })
+  } else if (staticRoot) {
+    warnings.push(`WEB_DIST_DIR 指向的目录不存在：${staticRoot}，静态托管未启用`)
+  }
 
   await app.ready()
   for (const warning of warnings) app.log.warn(warning)

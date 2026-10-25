@@ -7,12 +7,15 @@ Node.js 20 LTS + TypeScript（strict）+ Fastify 4 的自托管后端：账号�
 
 ```bash
 cd server
-npm install
+npm install --workspaces=false   # 独立安装（避免 monorepo 提升造成 @fastify/static 与 fastify 双副本、类型增强失效）
 npx prisma generate        # 生成 Prisma Client（编译 prisma.ts 需要）
 npm run check              # tsc --noEmit
-npm run test               # vitest run（57 例，全内存仓储，无需 Docker/Postgres）
+npm run test               # vitest run（65 例，全内存仓储，无需 Docker/Postgres）
 npm run dev                # 本地起服务（无 DATABASE_URL 时自动退化为内存仓储并打 warn）
 ```
+
+免费托管（Render + Neon，同源方案）：见 `../docs/08-免费部署指南.md` 与根目录 `render.yaml`；
+本地联调同源形态：`WEB_DIST_DIR=../web/dist npm run dev`（Fastify 直接服务前端构建产物）。
 
 生产形态：`docker compose up -d`（nginx 反代 `/api` → api 容器 → PostgreSQL 16，见 docs/07）。
 

@@ -1,0 +1,33 @@
+# Render Blueprint：免费档单服务同源部署（docs/08-免费部署指南.md）
+# 用法：Render 控制台 New → Blueprint → 指向本仓库；DATABASE_URL 两个服务都要填 Neon 连接串（sync: false 运行时输入）。
+services:
+  - type: web
+    name: xiaotao-app
+    runtime: node
+    plan: free
+    region: singapore
+    healthCheckPath: /api/v1/health
+    buildCommand: cd web && npm ci && npm run build && cd ../server && npm ci --workspaces=false && npx prisma generate && npm run build
+    startCommand: cd server && node dist/src/app.js
+    envVars:
+      - key: WEB_DIST_DIR
+        value: ../web/dist
+      - key: XTAO_REPO
+        value: prisma
+      - key: HOST
+        value: 0.0.0.0
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+
+  # 一次性迁移任务：首次部署与 schema 变更后在 Render 控制台手动 Run Job
+  - type: job
+    name: xiaotao-migrate
+    runtime: node
+    plan: free
+    buildCommand: cd server && npm ci --workspaces=false && npx prisma generate
+    startCommand: cd server && npx prisma migrate deploy
+    envVars:
+      - key: DATABASE_URL
+        sync: false
