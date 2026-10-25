@@ -5857,3 +5857,322 @@ a.task-row:active {
     transform: translateY(-2.5px);
   }
 }
+
+/* ============================================================
+   激励体系：成就图鉴 / 进化仪式 / 成长相册 / 爸妈的信
+   ============================================================ */
+
+.badge-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: #fff3d4;
+  color: var(--amber);
+}
+
+.badge-progress b {
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.badge-progress small {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.badge-grid-page {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.badge-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 18px 14px 14px;
+  text-align: center;
+}
+
+.badge-cell-art {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.badge-cell.unlocked .badge-cell-art {
+  background: #fff3d4;
+  color: var(--amber);
+}
+
+.badge-cell.locked .badge-cell-art {
+  background: var(--fill);
+  color: #b9b9c0;
+}
+
+.badge-cell b {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.badge-cell.locked b {
+  color: var(--ter);
+}
+
+.badge-cell small {
+  color: var(--ter);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.badge-cell em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--mint);
+}
+
+.badge-cell.locked {
+  border-style: dashed;
+}
+
+/* 进化仪式 */
+.evolution-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(29, 29, 31, 0.42);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.evolution-card {
+  width: min(420px, 100%);
+  background: var(--surface);
+  border-radius: 24px;
+  padding: 30px 26px 22px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  animation: celebrate-pop 0.45s var(--ease-soft) 1;
+}
+
+.evolution-title {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.evolution-lede {
+  color: var(--sub);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.album-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  background: #fff3d4;
+  color: var(--amber);
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+/* 成长相册（小桃页成长卡内） */
+.album-list {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 0.5px solid var(--line);
+}
+
+.album-list b {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.album-list ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.album-list li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.album-list li svg {
+  color: var(--amber);
+  flex-shrink: 0;
+}
+
+.album-list li span {
+  flex: 1;
+  min-width: 0;
+}
+
+.album-list li small {
+  color: var(--ter);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 爸妈的信（小桃页信箱） */
+.pet-mailbox {
+  padding: 6px;
+}
+
+.mailbox-trigger {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  text-align: left;
+}
+
+.mailbox-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--fill);
+  color: var(--sub);
+  flex-shrink: 0;
+}
+
+.mailbox-icon.has-unread {
+  background: var(--accent);
+  color: #fff;
+}
+
+.mailbox-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.mailbox-copy b {
+  display: block;
+  font-size: 15.5px;
+  font-weight: 700;
+}
+
+.mailbox-copy small {
+  color: var(--ter);
+  font-size: 12.5px;
+}
+
+.mailbox-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--danger);
+  flex-shrink: 0;
+}
+
+.mailbox-notes {
+  list-style: none;
+  margin: 4px 0 6px;
+  padding: 6px 12px 0;
+  border-top: 0.5px solid var(--line);
+  display: grid;
+  gap: 10px;
+}
+
+.mailbox-notes li p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+.mailbox-notes li small {
+  color: var(--ter);
+  font-size: 11.5px;
+}
+
+/* 表扬信（设置页） */
+.praise-composer {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.praise-composer textarea {
+  flex: 1;
+  min-height: 56px;
+  padding: 10px 12px;
+  border: 0.5px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink);
+  resize: none;
+}
+
+.praise-composer textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.12);
+}
+
+.praise-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.praise-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--bg);
+}
+
+.praise-list li p {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.praise-list li small {
+  color: var(--ter);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.praise-remove {
+  flex-shrink: 0;
+}

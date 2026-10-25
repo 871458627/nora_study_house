@@ -28,6 +28,7 @@ export type IconName =
   | 'medal'
   | 'heart'
   | 'calendar'
+  | 'mail'
   | 'download'
   | 'upload'
   | 'wifi-off'
@@ -154,6 +155,12 @@ const ICONS: Record<IconName, ReactNode> = {
     <>
       <rect x="4" y="5.5" width="16" height="14.5" rx="3" />
       <path d="M4 10.5h16M8.5 3.5v3M15.5 3.5v3" />
+    </>
+  ),
+  mail: (
+    <>
+      <rect x="3.5" y="5.5" width="17" height="13" rx="3" />
+      <path d="m4.5 7.5 7.5 5.5 7.5-5.5" />
     </>
   ),
   download: (

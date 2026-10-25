@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useApp } from '../app/AppProvider';
 import { Icon, type IconName } from '../components/Icon';
 import { Mascot } from '../components/Mascot';
@@ -28,6 +29,10 @@ export function PetPage() {
     : 100;
   const full = state.pet.satiety >= 100;
   const currentSkin = petSkinFor(state.pet.skin);
+  const stageSeen = state.pet.stageSeen ?? 0;
+  const evolving = state.pet.stage > stageSeen;
+  const unreadPraise = state.praise.filter(note => !note.read).length;
+  const [mailboxOpen, setMailboxOpen] = useState(false);
 
   const feed = (kind: 'food' | 'meal') => {
     const available = kind === 'food' ? state.rewards.food : state.rewards.meals;
@@ -46,6 +51,11 @@ export function PetPage() {
   const toggleAccessory = (id: string, slot: string) => {
     const equipped = state.pet.equipped[slot] === id;
     dispatchLocal({ type: 'equip', slot, itemId: equipped ? null : id });
+  };
+
+  const openMailbox = () => {
+    setMailboxOpen(true);
+    if (unreadPraise > 0) dispatchLocal({ type: 'praise-read' });
   };
 
   return (
@@ -120,6 +130,37 @@ export function PetPage() {
             <p className="pin-note">饱食度每天会自然减少 15 点，多喂几天就能看到小桃长大。</p>
           </section>
 
+          {state.praise.length > 0 && (
+            <section className="card pet-mailbox">
+              <button type="button" className="mailbox-trigger" onClick={openMailbox}>
+                <span className={`mailbox-icon ${unreadPraise > 0 ? 'has-unread' : ''}`}>
+                  <Icon name="mail" size={20} />
+                </span>
+                <span className="mailbox-copy">
+                  <b>爸爸妈妈的信</b>
+                  <small>
+                    {unreadPraise > 0
+                      ? `有 ${unreadPraise} 封新信，点开看看！`
+                      : '信都在这里，随时可以再读。'}
+                  </small>
+                </span>
+                {unreadPraise > 0 && <span className="mailbox-dot" aria-hidden="true" />}
+              </button>
+              {mailboxOpen && (
+                <ul className="mailbox-notes">
+                  {state.praise.map(note => (
+                    <li key={note.id}>
+                      <p>{note.text}</p>
+                      <small>
+                        {note.date.slice(5)} {note.read ? '' : '· 新'}
+                      </small>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
+
           <section className="card pet-shop-entry">
             <span className="rail-icon">
               <Icon name="star" size={18} />
@@ -166,6 +207,22 @@ export function PetPage() {
                 ? `累计喂养 14 天进入少年桃，42 天进入大桃。每一次认真完成，都在帮小桃长大。`
                 : '小桃已经长成大桃了。接下来的每一天，都是你们一起攒下的。'}
             </p>
+            {state.album.length > 0 && (
+              <div className="album-list">
+                <b>成长相册</b>
+                <ul>
+                  {state.album.map((entry, i) => (
+                    <li key={`${entry.date}-${i}`}>
+                      <Icon name="sparkle" size={13} />
+                      <span>{entry.title}</span>
+                      <small>
+                        {entry.date.slice(5)} · 第 {entry.day} 天
+                      </small>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </section>
         </aside>
       </div>
@@ -173,7 +230,12 @@ export function PetPage() {
       <section className="wardrobe-section">
         <div className="section-title">
           <h2>小桃的衣柜</h2>
-          <span className="section-aside">徽章会解锁饰品，解锁后永久保留。</span>
+          <span className="section-aside">
+            徽章会解锁饰品，解锁后永久保留。
+            <Link to="/badges" className="text-link">
+              看看成就图鉴 <Icon name="chevron" size={12} />
+            </Link>
+          </span>
         </div>
         <div className="wardrobe-grid">
           {ACCESSORIES.map(accessory => {
@@ -232,6 +294,34 @@ export function PetPage() {
           没有完成计划时，小桃只会饿肚子或者有点委屈；已经得到的星星、徽章和饰品都不会被收回。
         </span>
       </div>
+
+      {evolving && (
+        <div className="evolution-overlay" role="alertdialog" aria-label="进化庆祝">
+          <div className="evolution-card">
+            <div className="evolution-art">
+              <Mascot mood="celebrate" equipped={state.pet.equipped} petId={state.pet.skin} size={150} animated />
+            </div>
+            <b className="evolution-title">长大啦！</b>
+            <p className="evolution-lede">
+              第 {state.pet.fedDays} 天，{currentSkin.name}长成了「{stage.name}」。
+              每一天认真的陪伴，它都记得。
+            </p>
+            <div className="album-card">
+              <Icon name="sparkle" size={15} />
+              <span>
+                {todayKey().slice(5)} · 第 {state.pet.fedDays} 天 · 长成{stage.name}啦
+              </span>
+            </div>
+            <button
+              type="button"
+              className="btn btn-primary full"
+              onClick={() => dispatchLocal({ type: 'mark-stage-seen', date: todayKey() })}
+            >
+              收下这张纪念卡
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

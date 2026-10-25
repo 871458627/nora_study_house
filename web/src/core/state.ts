@@ -9,7 +9,7 @@ import {
   type SyncState,
   type TaskOutcome,
 } from './model';
-import { decayPet, stageFromFedDays } from './pet';
+import { decayPet, stageFromFedDays, STAGES } from './pet';
 import { generatePlan } from './plan';
 import { applyFreeDictation, applyFreePractice, applyTaskOutcome, feedPet } from './progress';
 
@@ -34,7 +34,11 @@ export type AppAction =
   | { type: 'feed'; date: string; kind: 'food' | 'meal' }
   | { type: 'equip'; slot: string; itemId: string | null }
   | { type: 'shop-buy'; petId: string }
-  | { type: 'shop-equip'; petId: string };
+  | { type: 'shop-equip'; petId: string }
+  | { type: 'mark-stage-seen'; date: string }
+  | { type: 'praise-add'; text: string; date: string }
+  | { type: 'praise-read' }
+  | { type: 'praise-remove'; id: string };
 
 function withPlan(state: SyncState, date: string): SyncState {
   if (state.dailyPlans[date]) return state;
@@ -62,6 +66,16 @@ export function appReducer(state: SyncState, action: AppAction): SyncState {
         settings: { ...state.settings, dailyMinutes: action.dailyMinutes },
         timetable: action.timetable ?? state.timetable,
         pet: { ...state.pet, lastDecayDate: date },
+        album:
+          state.album.length === 0
+            ? [
+                {
+                  date,
+                  day: 0,
+                  title: `和${action.nickname.trim().slice(0, 12) || '小朋友'}相遇`,
+                },
+              ]
+            : state.album,
         updatedAt: new Date().toISOString(),
       };
       return withPlan(base, date);
@@ -166,6 +180,57 @@ export function appReducer(state: SyncState, action: AppAction): SyncState {
         rewards: { ...state.rewards, stars: state.rewards.stars - skin.price },
         shop: { owned: [...state.shop.owned, action.petId] },
         pet: { ...state.pet, skin: action.petId },
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    case 'mark-stage-seen': {
+      // 升级瞬间只庆祝一次：记录已见阶段并写入成长相册
+      const stage = state.pet.stage;
+      const seen = state.pet.stageSeen ?? 0;
+      if (stage <= seen) return state;
+      const stageName = STAGES[stage].name;
+      return {
+        ...state,
+        pet: { ...state.pet, stageSeen: stage },
+        album: [
+          ...state.album,
+          { date: action.date, day: state.pet.fedDays, title: `长成${stageName}啦` },
+        ].slice(-30),
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    case 'praise-add': {
+      const text = action.text.trim().slice(0, 80);
+      if (!text) return state;
+      const note = {
+        id: `p${Date.now().toString(36)}`,
+        text,
+        date: action.date,
+        read: false,
+      };
+      return {
+        ...state,
+        praise: [note, ...state.praise].slice(0, 20),
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    case 'praise-read': {
+      if (state.praise.every(note => note.read)) return state;
+      return {
+        ...state,
+        praise: state.praise.map(note => ({ ...note, read: true })),
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    case 'praise-remove': {
+      if (!state.praise.some(note => note.id === action.id)) return state;
+      return {
+        ...state,
+        praise: state.praise.filter(note => note.id !== action.id),
         updatedAt: new Date().toISOString(),
       };
     }

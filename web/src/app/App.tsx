@@ -13,6 +13,7 @@ import { LessonPage } from '../pages/LessonPage';
 import { TaskPage } from '../pages/TaskPage';
 import { PetPage } from '../pages/PetPage';
 import { ShopPage } from '../pages/ShopPage';
+import { BadgesPage } from '../pages/BadgesPage';
 import { RecordsPage } from '../pages/RecordsPage';
 import { ReportPage } from '../pages/ReportPage';
 import { SettingsPage } from '../pages/SettingsPage';
@@ -140,6 +141,7 @@ export function App() {
           <Route path="/dictation/review" element={<DictationReviewPage />} />
           <Route path="/pet" element={<PetPage />} />
           <Route path="/shop" element={<ShopPage />} />
+          <Route path="/badges" element={<BadgesPage />} />
           <Route path="/records" element={<RecordsPage />} />
           <Route path="/report" element={<ReportPage />} />
           <Route path="/settings" element={<SettingsPage />} />

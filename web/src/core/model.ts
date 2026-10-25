@@ -67,11 +67,28 @@ export interface PetState {
   equipped: Record<string, string>;
   /** 当前陪伴伙伴（宠物商城皮肤 id，src/data/pets.ts） */
   skin?: string;
+  /** 已举行过进化仪式的最高阶段（激励体系：升级瞬间只庆祝一次） */
+  stageSeen?: 0 | 1 | 2;
 }
 
 /** 宠物商城：已拥有的伙伴（星星兑换，FR-P1-01 的宠物部分） */
 export interface ShopState {
   owned: string[];
+}
+
+/** 成长相册条目：进化瞬间与相遇纪念 */
+export interface AlbumEntry {
+  date: string;
+  day: number;
+  title: string;
+}
+
+/** 表扬信：家长区书写，孩子在小桃页信箱读 */
+export interface PraiseNote {
+  id: string;
+  text: string;
+  date: string;
+  read: boolean;
 }
 
 export interface DailyLog {
@@ -113,6 +130,10 @@ export interface SyncState {
   rewards: Rewards;
   shop: ShopState;
   pet: PetState;
+  /** 成长相册：进化等里程碑（激励体系，2026-10-25） */
+  album: AlbumEntry[];
+  /** 爸妈的表扬信（家长写、孩子读） */
+  praise: PraiseNote[];
   dailyPlans: Record<string, DailyPlan>;
   dailyLogs: Record<string, DailyLog>;
   freeLogs: Record<string, FreePracticeLog>;
@@ -151,6 +172,8 @@ export function createInitialState(): SyncState {
       badges: [],
     },
     shop: { owned: [] },
+    album: [],
+    praise: [],
     pet: {
       satiety: 70,
       stage: 0,
@@ -158,6 +181,7 @@ export function createInitialState(): SyncState {
       unlocked: [],
       equipped: {},
       skin: 'xiaotao',
+      stageSeen: 0,
     },
     dailyPlans: {},
     dailyLogs: {},
@@ -290,6 +314,32 @@ function normalizeFreeLogs(value: unknown): Record<string, FreePracticeLog> {
  * Accepts a locally cached or cloud document and returns a safe state.
  * Returns null when the document is not a v1 family state.
  */
+function normalizeAlbum(source: unknown[]): AlbumEntry[] {
+  const entries: AlbumEntry[] = [];
+  for (const raw of source) {
+    if (!isRecord(raw)) continue;
+    if (entries.length >= 30) break;
+    const date = raw.date;
+    const title = typeof raw.title === 'string' ? raw.title.slice(0, 40) : '';
+    if (!isValidDateKey(date) || !title) continue;
+    entries.push({ date, day: Math.max(0, Number(raw.day) || 0), title });
+  }
+  return entries;
+}
+
+function normalizePraise(source: unknown[]): PraiseNote[] {
+  const notes: PraiseNote[] = [];
+  for (const raw of source) {
+    if (!isRecord(raw)) continue;
+    if (notes.length >= 20) break;
+    const id = typeof raw.id === 'string' ? raw.id : '';
+    const text = typeof raw.text === 'string' ? raw.text.slice(0, 80) : '';
+    if (!id || !text || !isValidDateKey(raw.date)) continue;
+    notes.push({ id, text, date: raw.date, read: raw.read === true });
+  }
+  return notes;
+}
+
 export function normalizeState(value: unknown): SyncState | null {
   if (!isRecord(value) || value.schemaVersion !== SCHEMA_VERSION) return null;
   const base = createInitialState();
@@ -298,6 +348,8 @@ export function normalizeState(value: unknown): SyncState | null {
   const rewards = isRecord(value.rewards) ? value.rewards : {};
   const pet = isRecord(value.pet) ? value.pet : {};
   const shop = isRecord(value.shop) ? value.shop : {};
+  const album = Array.isArray(value.album) ? value.album : [];
+  const praise = Array.isArray(value.praise) ? value.praise : [];
   const lessonsSource = isRecord(value.lessons) ? value.lessons : {};
   const lessons: Record<string, LessonProgress> = {};
   for (const [id, raw] of Object.entries(lessonsSource)) {
@@ -406,6 +458,9 @@ export function normalizeState(value: unknown): SyncState | null {
         : {},
       skin:
         typeof pet.skin === 'string' && PET_BY_ID[pet.skin] ? pet.skin : DEFAULT_PET_ID,
+      stageSeen: ([0, 1, 2].includes(Number(pet.stageSeen))
+        ? Number(pet.stageSeen)
+        : undefined) as 0 | 1 | 2 | undefined,
     },
     shop: {
       owned: Array.isArray(shop.owned)
@@ -414,6 +469,8 @@ export function normalizeState(value: unknown): SyncState | null {
           )
         : [],
     },
+    album: normalizeAlbum(album),
+    praise: normalizePraise(praise),
     dailyPlans: normalizePlans(value.dailyPlans),
     dailyLogs: normalizeLogs(value.dailyLogs),
     freeLogs: normalizeFreeLogs(value.freeLogs),

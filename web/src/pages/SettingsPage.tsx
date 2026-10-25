@@ -6,6 +6,7 @@ import { BackupImportDialog, type PendingImport } from '../components/BackupImpo
 import { CurrentLessonPicker } from '../components/CurrentLessonPicker';
 import { SyncBadge } from '../components/ui';
 import { PinGate, CreatePinForm } from '../components/PinGate';
+import { todayKey } from '../core/date';
 import { inspectBackup } from '../core/storage';
 import {
   DEFAULT_TIMETABLE,
@@ -85,6 +86,7 @@ export function SettingsPage() {
     parentLogout,
   } = useApp();
   const [nickname, setNickname] = useState(state.profile.nickname);
+  const [praiseDraft, setPraiseDraft] = useState('');
   const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
   const [importBusy, setImportBusy] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
@@ -604,6 +606,58 @@ export function SettingsPage() {
                     </p>
                   </div>
                 </>
+              )}
+            </section>
+
+            <section className="settings-card card">
+              <div className="section-title">
+                <h2>给孩子的表扬信</h2>
+                <span className="section-aside">
+                  {state.praise.length ? `已送出 ${state.praise.length} 封` : '一封都没写过'}
+                </span>
+              </div>
+              <p className="settings-note">
+                写一句想让孩子听到的话，会出现在小桃页的「爸爸妈妈的信」里。
+                夸具体的努力最有效，比如「今天口算全对，你很用心」。
+              </p>
+              <div className="praise-composer">
+                <textarea
+                  value={praiseDraft}
+                  maxLength={80}
+                  rows={2}
+                  placeholder="写给孩子的一句话（最多 80 字）"
+                  aria-label="表扬信内容"
+                  onChange={event => setPraiseDraft(event.target.value)}
+                />
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  disabled={!praiseDraft.trim()}
+                  onClick={() => {
+                    dispatchLocal({ type: 'praise-add', text: praiseDraft, date: todayKey() });
+                    setPraiseDraft('');
+                    notify('信已送出，孩子会在小桃页收到。');
+                  }}
+                >
+                  送出
+                </button>
+              </div>
+              {state.praise.length > 0 && (
+                <ul className="praise-list">
+                  {state.praise.map(note => (
+                    <li key={note.id}>
+                      <p>{note.text}</p>
+                      <small>{note.date.slice(5)}</small>
+                      <button
+                        type="button"
+                        className="text-link praise-remove"
+                        onClick={() => dispatchLocal({ type: 'praise-remove', id: note.id })}
+                      >
+                        删除
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               )}
             </section>
 
