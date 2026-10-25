@@ -544,7 +544,7 @@ export function PracticeSession({
           )}
 
           {isConfirmed && (
-            <div className={`feedback-card ${isCorrect ? 'correct' : 'wrong'}`}>
+            <div className={`feedback-card ${isCorrect ? 'correct' : 'wrong'}`} role="status">
               <span className="feedback-icon">
                 <Icon name={isCorrect ? 'check' : 'leaf'} size={15} />
               </span>

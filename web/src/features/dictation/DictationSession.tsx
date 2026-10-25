@@ -456,7 +456,7 @@ export function DictationSession({
                   </div>
 
                   {ranked && ranked.length > 0 && (
-                    <div className="hw-cand">
+                    <div className="hw-cand" aria-live="polite">
                       <div className="hw-cand-label">写得最像的字 · 点一个确认</div>
                       <div className="hw-cand-row">
                         {ranked.map((ch, i) => (
@@ -478,7 +478,7 @@ export function DictationSession({
                   )}
 
                   {ranked && ranked.length === 0 && strokes.length > 0 && (
-                    <div className="hw-cand-empty">
+                    <div className="hw-cand-empty" aria-live="polite">
                       <span>没认出来，再写清楚一点试试</span>
                       <button type="button" className="hw-notlike" onClick={notLike}>
                         清空重写
@@ -544,7 +544,7 @@ export function DictationSession({
           )}
 
           {revealed && (
-            <div className={`feedback-card ${correct ? 'correct' : 'wrong'}`}>
+            <div className={`feedback-card ${correct ? 'correct' : 'wrong'}`} role="status">
               <span className="feedback-icon">
                 <Icon name={correct ? 'check' : 'leaf'} size={15} />
               </span>
