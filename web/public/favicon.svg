@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="小桃学习屋">
+  <rect width="120" height="120" rx="27" fill="#FBFBFD" />
+  <ellipse cx="45" cy="34" rx="10.5" ry="23" fill="#F6BCCB" transform="rotate(-14 45 34)" />
+  <ellipse cx="75" cy="34" rx="10.5" ry="23" fill="#F6BCCB" transform="rotate(14 75 34)" />
+  <ellipse cx="45" cy="35" rx="5.5" ry="14.5" fill="#FDE3EA" transform="rotate(-14 45 35)" />
+  <ellipse cx="75" cy="35" rx="5.5" ry="14.5" fill="#FDE3EA" transform="rotate(14 75 35)" />
+  <path d="M60 44c-21 0-36 17-36 38 0 22 16 35 36 35s36-13 36-35c0-21-15-38-36-38z" fill="#F9D9E2" stroke="#E7A5B8" stroke-width="2.2" />
+  <path d="M60 46c-5 6-5 12 0 18 5-6 5-12 0-18z" fill="#F0B6C7" />
+  <path d="M60 46c4-10 12-13 20-10-2 9-10 14-20 10z" fill="#9FD3BE" />
+  <path d="M46 79q6-7 12 0" stroke="#1D1D1F" stroke-width="3.2" fill="none" stroke-linecap="round" />
+  <path d="M62 79q6-7 12 0" stroke="#1D1D1F" stroke-width="3.2" fill="none" stroke-linecap="round" />
+  <ellipse cx="41" cy="89" rx="5" ry="3.1" fill="#EFA3B8" opacity=".5" />
+  <ellipse cx="79" cy="89" rx="5" ry="3.1" fill="#EFA3B8" opacity=".5" />
+  <path d="M55 90c2.5 5 12.5 5 15 0Z" fill="#7C5362" />
+  <path d="M55 90c2.5 5 12.5 5 15 0" fill="none" stroke="#7C5362" stroke-width="2.2" stroke-linejoin="round" />
+</svg>
