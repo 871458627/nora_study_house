@@ -7,8 +7,10 @@ import type { DictationWord } from '../../data/types';
 import type { TaskOutcome } from '../../core/model';
 import { shuffleWithSeed } from '../../core/grading';
 import { useSpeech } from '../../app/useSpeech';
+import { recognizeChar, type Stroke } from '../../app/handwritingEngine';
+import { TianzigePad } from './TianzigePad';
 
-type DictationMode = 'choice' | 'type';
+type DictationMode = 'choice' | 'type' | 'handwrite';
 
 interface DictationSessionProps {
   words: DictationWord[];
@@ -43,6 +45,11 @@ export function DictationSession({
   );
   const [finished, setFinished] = useState(false);
   const [leaveOpen, setLeaveOpen] = useState(false);
+  // 田字格手写状态（docs/01 P2-4）
+  const [strokes, setStrokes] = useState<Stroke[]>([]);
+  const [writtenChars, setWrittenChars] = useState<string[]>([]);
+  const [ranked, setRanked] = useState<string[] | null>(null);
+  const [missCount, setMissCount] = useState(0);
   const navigate = useNavigate();
 
   const requestLeave = () => {
@@ -74,6 +81,45 @@ export function DictationSession({
   const canSpeak = supported && hasVoice('zh-CN');
   const revealed = selected !== null;
   const correct = revealed && selected === word?.word;
+
+  // 手写闭集：本次听写全部词语的生字（去重），候选与提示都只在其中取
+  const closedSet = useMemo(
+    () => Array.from(new Set(words.map(item => [...item.word]).flat())),
+    [words],
+  );
+  const charPinyin = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const item of words) {
+      const syllables = item.pinyin.trim().split(/\s+/);
+      if (syllables.length === [...item.word].length) {
+        [...item.word].forEach((ch, i) => map.set(ch, syllables[i]));
+      }
+    }
+    return map;
+  }, [words]);
+  const targetChars = word ? [...word.word] : [];
+  const bankChars = useMemo(() => {
+    if (!word) return [];
+    const fillers = shuffleWithSeed(closedSet.filter(ch => !word.word.includes(ch)), `${word.id}:bank`)
+      .slice(0, 2);
+    return shuffleWithSeed([...word.word, ...fillers], `${word.id}:bank-order`);
+  }, [word, closedSet]);
+
+  // 落笔停顿 0.7s 自动出候选（写完不用点按钮）
+  useEffect(() => {
+    if (dictationMode !== 'handwrite' || revealed || !strokes.length) {
+      setRanked(null);
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      try {
+        setRanked(recognizeChar(strokes, closedSet));
+      } catch {
+        setRanked([]);
+      }
+    }, 700);
+    return () => window.clearTimeout(timer);
+  }, [strokes, dictationMode, revealed, closedSet]);
 
   const options = useMemo(() => {
     if (!word) return [];
@@ -217,12 +263,38 @@ export function DictationSession({
     setIndex(value => value + 1);
     setSelected(null);
     setDraft('');
+    setStrokes([]);
+    setWrittenChars([]);
+    setRanked(null);
+    setMissCount(0);
   };
 
   const switchMode = (nextMode: DictationMode) => {
     if (revealed) return;
     setDictationMode(nextMode);
     setDraft('');
+    setStrokes([]);
+    setWrittenChars([]);
+    setRanked(null);
+    setMissCount(0);
+  };
+
+  const confirmChar = (char: string) => {
+    if (revealed || writtenChars.length >= targetChars.length) return;
+    const nextChars = [...writtenChars, char];
+    setWrittenChars(nextChars);
+    setStrokes([]);
+    setRanked(null);
+    setMissCount(0);
+    if (nextChars.length === targetChars.length) {
+      answer(nextChars.join(''));
+    }
+  };
+
+  const notLike = () => {
+    setStrokes([]);
+    setRanked(null);
+    setMissCount(count => count + 1);
   };
 
   return (
@@ -264,7 +336,17 @@ export function DictationSession({
             disabled={revealed}
             onClick={() => switchMode('type')}
           >
-            听音写字
+            拼音打字
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={dictationMode === 'handwrite'}
+            className={dictationMode === 'handwrite' ? 'seg active' : 'seg'}
+            disabled={revealed}
+            onClick={() => switchMode('handwrite')}
+          >
+            田字格写
           </button>
         </div>
 
@@ -303,11 +385,13 @@ export function DictationSession({
             </div>
           )}
 
-          {(!canSpeak || dictationMode === 'type' || revealed) && (
-            <div className="pinyin-prompt">
-              <span>拼音</span>
-              <b>{word.pinyin}</b>
-            </div>
+          {dictationMode === 'handwrite' && !revealed ? null : (
+            (!canSpeak || dictationMode === 'type' || revealed) && (
+              <div className="pinyin-prompt">
+                <span>拼音</span>
+                <b>{word.pinyin}</b>
+              </div>
+            )
           )}
 
           {dictationMode === 'choice' ? (
@@ -339,6 +423,106 @@ export function DictationSession({
                   </button>
                 );
               })}
+            </div>
+          ) : dictationMode === 'handwrite' ? (
+            <div className="dictation-handwrite">
+              <div className="hw-slots" aria-label="词语书写进度">
+                {targetChars.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`hw-slot ${i < writtenChars.length ? 'filled' : ''} ${
+                      i === writtenChars.length && !revealed ? 'active' : ''
+                    }`}
+                  >
+                    {writtenChars[i] ?? ''}
+                  </span>
+                ))}
+              </div>
+
+              {!revealed && (
+                <>
+                  <TianzigePad
+                    strokes={strokes}
+                    onStrokesChange={setStrokes}
+                    hintChar={targetChars[writtenChars.length] ?? ''}
+                  />
+                  <div className="hw-tools">
+                    <button
+                      type="button"
+                      className="hw-tool"
+                      disabled={!strokes.length}
+                      onClick={() => setStrokes(items => items.slice(0, -1))}
+                    >
+                      撤销一笔
+                    </button>
+                    <button
+                      type="button"
+                      className="hw-tool ghost"
+                      disabled={!strokes.length}
+                      onClick={() => setStrokes([])}
+                    >
+                      字迹清空
+                    </button>
+                  </div>
+
+                  {ranked && ranked.length > 0 && (
+                    <div className="hw-cand">
+                      <div className="hw-cand-label">写得最像的字 · 点一个确认</div>
+                      <div className="hw-cand-row">
+                        {ranked.map((ch, i) => (
+                          <button
+                            key={ch}
+                            type="button"
+                            className={`hw-cand-item ${i === 0 ? 'top' : ''}`}
+                            onClick={() => confirmChar(ch)}
+                          >
+                            <b>{ch}</b>
+                            {charPinyin.get(ch) ? <span>{charPinyin.get(ch)}</span> : null}
+                          </button>
+                        ))}
+                      </div>
+                      <button type="button" className="hw-notlike" onClick={notLike}>
+                        都不像，重新写
+                      </button>
+                    </div>
+                  )}
+
+                  {ranked && ranked.length === 0 && strokes.length > 0 && (
+                    <div className="hw-cand-empty">
+                      <span>没认出来，再写清楚一点试试</span>
+                      <button type="button" className="hw-notlike" onClick={notLike}>
+                        清空重写
+                      </button>
+                    </div>
+                  )}
+
+                  {missCount >= 2 && (
+                    <div className="hw-bank">
+                      <div className="hw-cand-label">还是写不出来？从这几个字里点一个</div>
+                      <div className="hw-cand-row">
+                        {bankChars.map(ch => (
+                          <button
+                            key={ch}
+                            type="button"
+                            className="hw-cand-item"
+                            onClick={() => confirmChar(ch)}
+                          >
+                            <b>{ch}</b>
+                            {charPinyin.get(ch) ? <span>{charPinyin.get(ch)}</span> : null}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {revealed && (
+                <div className="hw-written">
+                  <span>你写的是</span>
+                  <b>{writtenChars.join('')}</b>
+                </div>
+              )}
             </div>
           ) : (
             <div className="dictation-type">

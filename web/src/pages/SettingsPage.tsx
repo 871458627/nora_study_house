@@ -295,7 +295,7 @@ export function SettingsPage() {
               <div className="settings-row">
                 <div className="settings-row-copy">
                   <b>听写方式</b>
-                  <small>听音选字适合独立完成；听音写字需要家长在旁边协助。</small>
+                  <small>听音选字适合独立完成；田字格手写最贴近纸面听写；拼音打字需要键盘输入。</small>
                 </div>
                 <div className="segmented" role="tablist" aria-label="默认听写方式">
                   <button
@@ -318,7 +318,18 @@ export function SettingsPage() {
                       dispatchLocal({ type: 'update-settings', patch: { dictationMode: 'type' } })
                     }
                   >
-                    听音写字
+                    拼音打字
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={state.settings.dictationMode === 'handwrite'}
+                    className={state.settings.dictationMode === 'handwrite' ? 'seg active' : 'seg'}
+                    onClick={() =>
+                      dispatchLocal({ type: 'update-settings', patch: { dictationMode: 'handwrite' } })
+                    }
+                  >
+                    田字格写
                   </button>
                 </div>
               </div>

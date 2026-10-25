@@ -22,7 +22,7 @@ export interface AppSettings {
   dailyMinutes: number;
   deadlineHour: number;
   dailyDrill: boolean;
-  dictationMode: 'choice' | 'type';
+  dictationMode: 'choice' | 'type' | 'handwrite';
   ttsEnabled: boolean;
 }
 
@@ -356,7 +356,10 @@ export function normalizeState(value: unknown): SyncState | null {
           ? Number(settings.deadlineHour)
           : base.settings.deadlineHour,
       dailyDrill: settings.dailyDrill === true,
-      dictationMode: settings.dictationMode === 'type' ? 'type' : 'choice',
+      dictationMode:
+        settings.dictationMode === 'type' || settings.dictationMode === 'handwrite'
+          ? settings.dictationMode
+          : 'choice',
       ttsEnabled: settings.ttsEnabled !== false,
     },
     timetable: normalizeTimetable(value.timetable),
