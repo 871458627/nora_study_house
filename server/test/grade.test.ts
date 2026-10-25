@@ -25,7 +25,7 @@ async function tokenOf(app: FastifyInstance, username: string): Promise<string> 
   return (res.json() as { accessToken: string }).accessToken
 }
 
-function switchGrade(app: FastifyInstance, token: string, body: unknown) {
+function switchGrade(app: FastifyInstance, token: string, body: Record<string, unknown>) {
   return app.inject({ method: 'POST', url: '/api/v1/grade/switch', headers: authHeader(token), payload: body })
 }
 
