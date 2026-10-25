@@ -34,6 +34,7 @@ import {
   type GradeKey,
 } from '../data/content';
 import { switchGradeRequest } from './auth';
+import { saveGradeArchive, sliceIsNonEmpty, takeGradeArchive } from '../core/gradeArchive';
 import {
   downloadBackup,
   emptyDevice,
@@ -156,6 +157,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [conflictOpen, setConflictOpen] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [parentAccount, setParentAccount] = useState<AuthAccount | null>(() => currentAccount());
+  const parentAccountRef = useRef<AuthAccount | null>(parentAccount);
+  useEffect(() => {
+    parentAccountRef.current = parentAccount;
+  }, [parentAccount]);
 
   const stateRef = useRef(state);
   const deviceRef = useRef(device);
@@ -641,6 +646,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [updateDevice]);
 
   const [gradeSwitching, setGradeSwitching] = useState(false);
+  // 双击防护必须用 ref：state 在同一渲染周期内不变，快速二连点会双双穿透。
+  const gradeSwitchingRef = useRef(false);
 
   /**
    * 切换年级：服务端封存旧年级切片并恢复/新建目标年级 → 客户端换内容包 →
@@ -649,13 +656,45 @@ export function AppProvider({ children }: { children: ReactNode }) {
    */
   const switchGrade = useCallback(
     async (grade: Grade, semester: Semester) => {
-      if (gradeSwitching) return;
+      if (gradeSwitchingRef.current) return;
       const fromKey = currentGradeKeyOf(stateRef.current.grade ?? 2, stateRef.current.semesterOverride);
       const toKey = gradeKeyOf(grade, semester);
       if (toKey === fromKey) return;
       if (!hasPack(toKey)) return;
+      gradeSwitchingRef.current = true;
       setGradeSwitching(true);
       try {
+        // 未登录家长账号：纯本机切换（docs/12 v1.2）——切片封存到本机、
+        // 目标年级有本机存档则恢复。账号登录只影响云同步，不阻断切换。
+        if (!parentAccountRef.current) {
+          const current = stateRef.current;
+          const slice = {
+            lessons: current.lessons,
+            pointers: current.pointers,
+            mistakes: current.mistakes,
+            weakness: current.weakness,
+            dictationQueue: current.dictationQueue,
+          };
+          if (sliceIsNonEmpty(slice)) saveGradeArchive(fromKey, slice);
+          const restoredSlice = takeGradeArchive(toKey);
+          const next: SyncState = {
+            ...current,
+            grade,
+            semesterOverride: semester,
+            lessons: (restoredSlice?.lessons as SyncState['lessons']) ?? {},
+            pointers: (restoredSlice?.pointers as SyncState['pointers']) ?? { chinese: 0, math: 0, english: 0 },
+            mistakes: (restoredSlice?.mistakes as SyncState['mistakes']) ?? [],
+            weakness: (restoredSlice?.weakness as SyncState['weakness']) ?? {},
+            dictationQueue: (restoredSlice?.dictationQueue as SyncState['dictationQueue']) ?? {},
+            updatedAt: new Date().toISOString(),
+          };
+          setPack(toKey);
+          stateRef.current = next;
+          dispatch({ type: 'replace', state: next });
+          saveCachedState(next);
+          notify(restoredSlice ? '已切回，进度接续如初。' : '新教材准备好了！');
+          return;
+        }
         const result = await switchGradeRequest(grade, semester, fromKey);
         const next = normalizeState(result.state);
         if (!next) throw new Error('invalid state from grade switch');
@@ -668,10 +707,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setSyncError(null);
         notify(result.restored ? '已切回，进度接续如初。' : '新教材准备好了！');
       } finally {
+        gradeSwitchingRef.current = false;
         setGradeSwitching(false);
       }
     },
-    [gradeSwitching, notify, updateDevice],
+    [notify, updateDevice],
   );
 
   const parentLogin = useCallback(

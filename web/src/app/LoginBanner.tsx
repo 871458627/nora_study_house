@@ -23,7 +23,7 @@ export function LoginBanner() {
       <span className="pending-conflict-icon">
         <Icon name="alert" size={15} />
       </span>
-      <span>家长未登录：可以先随便看看，学习要等家长登录后继续。</span>
+      <span>未登录家长账号：学习照常，数据保存在本机；登录后可云备份并在其他设备接着学。</span>
       <button type="button" className="text-link banner-cta" onClick={() => navigate('/settings')}>
         去登录
       </button>
