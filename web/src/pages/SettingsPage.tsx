@@ -206,9 +206,6 @@ export function SettingsPage() {
             课程表、每日时长、听写方式和数据备份都在这里。改动会自动保存，并同步到家人的设备。
           </p>
         </div>
-        <div className="head-side">
-          <SyncBadge />
-        </div>
       </header>
 
       <PinGate>
