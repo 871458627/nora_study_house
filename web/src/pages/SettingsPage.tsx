@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useApp } from '../app/AppProvider';
+import { AuthError } from '../app/auth';
 import { Icon } from '../components/Icon';
 import { BackupImportDialog, type PendingImport } from '../components/BackupImportDialog';
 import { CurrentLessonPicker } from '../components/CurrentLessonPicker';
@@ -21,11 +22,14 @@ const SYNC_LABEL: Record<string, string> = {
   synced: '已同步',
   offline: '离线，改动已留在本机',
   conflict: '有待处理的版本冲突',
+  logged_out: '未登录，等待家长登录后同步',
 };
 
 const ERROR_LABEL: Record<string, string> = {
-  login_required: 'Qoder 登录已过期，请重新登录后再同步。',
-  forbidden: '当前账号没有这个站点的访问权限。',
+  login_required: '需要家长登录后才能同步，本地数据不受影响。',
+  invalid_token: '登录状态已失效，请重新登录。',
+  refresh_reused: '登录状态异常，请重新登录。',
+  forbidden: '当前账号没有访问权限。',
   service_unavailable: '云端服务暂时不可用，请稍后再试。',
   offline: '网络没有连上，改动会留在本机，联网后自动重试。',
   sync_failed: '同步没有完成，请稍后再试。',
@@ -33,9 +37,14 @@ const ERROR_LABEL: Record<string, string> = {
   invalid_state: '云端数据无法识别，已保留本机版本。',
 };
 
-function loginHref(): string {
-  const current = `${window.location.pathname}${window.location.hash}`;
-  return `/__qoder_auth/start?return_path=${encodeURIComponent(current)}`;
+/** Parent-facing login/register error copy, exact texts from docs/02 §3.1. */
+function authErrorText(error: unknown): string {
+  if (error instanceof AuthError) {
+    if (error.code === 'invalid_credentials') return '用户名或密码不正确';
+    if (error.code === 'rate_limited') return '尝试过于频繁，请15分钟后再试';
+    if (error.code === 'offline') return '网络没有连上，请联网后再试。';
+  }
+  return '请求没有完成，请稍后再试。';
 }
 
 function formatWhen(value?: string): string {
@@ -70,10 +79,19 @@ export function SettingsPage() {
     importData,
     syncStatus,
     syncError,
+    parentAccount,
+    parentLogin,
+    parentRegister,
+    parentLogout,
   } = useApp();
   const [nickname, setNickname] = useState(state.profile.nickname);
   const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
   const [importBusy, setImportBusy] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [authUsername, setAuthUsername] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [authBusy, setAuthBusy] = useState(false);
 
   useEffect(() => {
     setNickname(state.profile.nickname);
@@ -107,6 +125,41 @@ export function SettingsPage() {
   const saveNickname = () => {
     dispatchLocal({ type: 'update-nickname', nickname });
     notify('昵称已保存。');
+  };
+
+  const submitAuth = async () => {
+    const username = authUsername.trim();
+    if (!username || !authPassword) {
+      setAuthError('请输入用户名和密码。');
+      return;
+    }
+    setAuthError('');
+    setAuthBusy(true);
+    try {
+      if (authMode === 'login') {
+        await parentLogin({ username, password: authPassword });
+        notify('已登录家长账号。');
+      } else {
+        await parentRegister({ username, password: authPassword });
+        notify('注册成功，已登录。');
+      }
+      setAuthPassword('');
+    } catch (error) {
+      setAuthError(authErrorText(error));
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    setAuthBusy(true);
+    try {
+      await parentLogout();
+      setAuthPassword('');
+      notify('已退出家长账号，本地记录保持不变。');
+    } finally {
+      setAuthBusy(false);
+    }
   };
 
   const handleImport = async (file: File | undefined) => {
@@ -406,11 +459,6 @@ export function SettingsPage() {
                 <div className="gentle-note warn">
                   <Icon name="alert" size={15} />
                   <span>{ERROR_LABEL[syncError] ?? `同步提示：${syncError}`}</span>
-                  {syncError === 'login_required' && (
-                    <a className="login-link" href={loginHref()}>
-                      重新登录
-                    </a>
-                  )}
                 </div>
               )}
               <p className="settings-note">
@@ -444,6 +492,119 @@ export function SettingsPage() {
                   />
                 </label>
               </div>
+            </section>
+
+            <section className="settings-card card">
+              <div className="section-title">
+                <h2>家长账号</h2>
+                <span className="section-aside">{parentAccount ? '已登录' : '未登录'}</span>
+              </div>
+              {parentAccount ? (
+                <>
+                  <div className="sync-grid">
+                    <div>
+                      <span>当前账号</span>
+                      <b>{parentAccount.username}</b>
+                    </div>
+                    <div>
+                      <span>同步状态</span>
+                      <b>{SYNC_LABEL[syncStatus] ?? syncStatus}</b>
+                    </div>
+                  </div>
+                  <p className="settings-note">
+                    登录后，这台设备的学习记录会与云端保持同步。退出登录不会删除本机数据，
+                    待同步的改动会等家长重新登录后再上传。
+                  </p>
+                  <div className="settings-actions">
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      disabled={authBusy}
+                      onClick={() => void handleLogout()}
+                    >
+                      退出登录
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="settings-note">
+                    登录家长账号后，这台设备的学习记录会与云端同步；换新设备时登录同一个账号即可接上。
+                    账号由家长注册和保管，孩子日常使用不需要登录。
+                  </p>
+                  <div className="pin-change">
+                    <div className="segmented" role="tablist" aria-label="家长账号操作">
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={authMode === 'login'}
+                        className={authMode === 'login' ? 'seg active' : 'seg'}
+                        onClick={() => {
+                          setAuthMode('login');
+                          setAuthError('');
+                        }}
+                      >
+                        登录
+                      </button>
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={authMode === 'register'}
+                        className={authMode === 'register' ? 'seg active' : 'seg'}
+                        onClick={() => {
+                          setAuthMode('register');
+                          setAuthError('');
+                        }}
+                      >
+                        注册新账号
+                      </button>
+                    </div>
+                    <div className="settings-row">
+                      <label className="text-field">
+                        <span>用户名</span>
+                        <input
+                          value={authUsername}
+                          maxLength={32}
+                          autoComplete="username"
+                          disabled={authBusy}
+                          onChange={event => setAuthUsername(event.target.value)}
+                        />
+                      </label>
+                      <label className="text-field">
+                        <span>密码</span>
+                        <input
+                          type="password"
+                          value={authPassword}
+                          autoComplete={
+                            authMode === 'login' ? 'current-password' : 'new-password'
+                          }
+                          disabled={authBusy}
+                          onChange={event => setAuthPassword(event.target.value)}
+                          onKeyDown={event => {
+                            if (event.key === 'Enter') void submitAuth();
+                          }}
+                        />
+                      </label>
+                    </div>
+                    <div className="settings-actions">
+                      <button
+                        type="button"
+                        className="btn btn-soft"
+                        disabled={authBusy}
+                        onClick={() => void submitAuth()}
+                      >
+                        {authMode === 'login' ? '登录' : '注册并登录'}
+                      </button>
+                    </div>
+                    {authError ? <p className="field-error">{authError}</p> : null}
+                    <p className="field-hint">
+                      {authMode === 'login'
+                        ? '用户名 3-32 位，可用小写字母、数字、下划线和短横线。'
+                        : '注册会创建一个家庭账号；用户名 3-32 位，密码至少 8 位。'}
+                    </p>
+                  </div>
+                </>
+              )}
             </section>
 
             <section className="settings-card card">

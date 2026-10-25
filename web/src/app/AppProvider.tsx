@@ -38,14 +38,30 @@ import {
 import {
   ConflictError,
   SyncError,
+  configureSync,
   fetchRemote,
   pushRemote,
   type RemoteState,
 } from '../core/sync';
 import { decideBootstrap } from '../core/syncBoot';
 import { clearPinUnlock, pinUnlockStore, rememberPinUnlock } from '../core/pinSession';
+import {
+  clearSession,
+  currentAccount,
+  getAccessToken,
+  login as loginRequest,
+  logout as logoutRequest,
+  refreshSession,
+  register as registerRequest,
+  AuthError,
+  type AuthAccount,
+} from './auth';
+import { flushSecurityEvents, reportSecurityEvent } from './securityEvents';
 
-export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'offline' | 'conflict';
+// v2: inject the in-memory access token accessor once at startup (docs/02 §5.1-3).
+configureSync({ getAccessToken });
+
+export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'offline' | 'conflict' | 'logged_out';
 export type PinResult = 'ok' | 'wrong' | 'locked' | 'unset';
 
 export interface ConflictInfo {
@@ -62,6 +78,11 @@ interface OnboardInput {
   nickname: string;
   dailyMinutes: number;
   pin: string;
+}
+
+interface AuthFormsInput {
+  username: string;
+  password: string;
 }
 
 interface AppContextValue {
@@ -87,6 +108,10 @@ interface AppContextValue {
   syncNow: () => Promise<void>;
   exportData: () => void;
   importData: (text: string) => boolean;
+  parentAccount: AuthAccount | null;
+  parentLogin: (input: AuthFormsInput) => Promise<void>;
+  parentRegister: (input: AuthFormsInput) => Promise<void>;
+  parentLogout: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -107,6 +132,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [conflict, setConflict] = useState<ConflictInfo | null>(null);
   const [conflictOpen, setConflictOpen] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
+  const [parentAccount, setParentAccount] = useState<AuthAccount | null>(() => currentAccount());
 
   const stateRef = useRef(state);
   const deviceRef = useRef(device);
@@ -115,6 +141,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const pushInFlightRef = useRef(false);
   const pushAgainRef = useRef(false);
   const bootedRef = useRef(false);
+  const loggedOutRef = useRef(false);
   const pushNowRef = useRef<() => Promise<void>>(async () => {});
   const noticeTimerRef = useRef<number | null>(null);
 
@@ -187,8 +214,78 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, 800);
   }, []);
 
+  /**
+   * Silent renewal via the refresh cookie (docs/02 §5.2-1). 'anonymous'
+   * means the server rejected the cookie (401) — a real logged-out state;
+   * network errors stay 'network-error' so offline devices are not asked
+   * to log in.
+   */
+  const attemptRefresh = useCallback(async (): Promise<'ok' | 'anonymous' | 'network-error'> => {
+    try {
+      await refreshSession();
+      setParentAccount(currentAccount());
+      void flushSecurityEvents();
+      return 'ok';
+    } catch (error) {
+      if (error instanceof AuthError && error.status === 401) {
+        clearSession();
+        setParentAccount(null);
+        return 'anonymous';
+      }
+      return 'network-error';
+    }
+  }, []);
+
+  /**
+   * Shared 401-family handling (docs/02 §5.2-2): auth gone maps to the new
+   * 'logged_out' status instead of 'offline', and never enters the offline
+   * markDirty retry storm. Returns true when treated as offline.
+   */
+  const noteSyncFailure = useCallback((error: unknown): boolean => {
+    const code = error instanceof SyncError ? error.code : 'sync_failed';
+    const authGone =
+      code === 'login_required' ||
+      code === 'invalid_token' ||
+      code === 'refresh_reused' ||
+      code === 'token_expired';
+    if (authGone) {
+      loggedOutRef.current = true;
+      setParentAccount(null);
+      setSyncError(code === 'token_expired' ? 'login_required' : code);
+      setSyncStatus('logged_out');
+      return false;
+    }
+    setSyncError(code);
+    setSyncStatus('offline');
+    return true;
+  }, []);
+
+  /**
+   * Runs a sync operation; a 401 token_expired triggers one silent refresh
+   * and exactly one retry (docs/02 §5.2-2). Auth-gone failures propagate so
+   * noteSyncFailure can classify them; no retry loops.
+   */
+  const runWithAuthRetry = useCallback(
+    async <T,>(operation: () => Promise<T>): Promise<T> => {
+      try {
+        return await operation();
+      } catch (error) {
+        if (!(error instanceof SyncError) || error.code !== 'token_expired') throw error;
+        const outcome = await attemptRefresh();
+        if (outcome === 'anonymous') throw new SyncError('login_required', 401);
+        if (outcome === 'network-error') throw new SyncError('offline', 0);
+        return await operation();
+      }
+    },
+    [attemptRefresh],
+  );
+
   const pushNow = useCallback(async () => {
     if (!stateRef.current.onboarded || conflictRef.current) return;
+    if (loggedOutRef.current) {
+      setSyncStatus('logged_out');
+      return;
+    }
     if (pushInFlightRef.current) {
       pushAgainRef.current = true;
       return;
@@ -197,7 +294,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSyncStatus('syncing');
     const snapshot = stateRef.current;
     try {
-      const remote = await pushRemote(snapshot, deviceRef.current.revision);
+      const remote = await runWithAuthRetry(() =>
+        pushRemote(snapshot, deviceRef.current.revision),
+      );
       const changedDuring = stateRef.current.updatedAt !== snapshot.updatedAt;
       updateDevice({
         revision: remote.revision,
@@ -214,10 +313,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setConflict(info);
         setConflictOpen(true);
         setSyncStatus('conflict');
-      } else {
-        const code = error instanceof SyncError ? error.code : 'sync_failed';
-        setSyncError(code);
-        setSyncStatus('offline');
+      } else if (noteSyncFailure(error)) {
         markDirty();
       }
     } finally {
@@ -227,16 +323,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (!conflictRef.current) schedulePush();
       }
     }
-  }, [markDirty, schedulePush, updateDevice]);
+  }, [markDirty, noteSyncFailure, runWithAuthRetry, schedulePush, updateDevice]);
 
   pushNowRef.current = pushNow;
 
   const pullOnce = useCallback(async () => {
     if (!stateRef.current.onboarded || conflictRef.current || pushInFlightRef.current) return;
+    if (loggedOutRef.current) return;
     if (deviceRef.current.dirty) return;
     try {
       setSyncStatus('syncing');
-      const remote = await fetchRemote();
+      const remote = await runWithAuthRetry(() => fetchRemote());
       setSyncError(null);
       if (remote.data && remote.revision > deviceRef.current.revision) {
         adoptRemote(remote);
@@ -248,23 +345,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       setSyncStatus('synced');
     } catch (error) {
-      setSyncError(error instanceof SyncError ? error.code : 'sync_failed');
-      setSyncStatus('offline');
+      noteSyncFailure(error);
     }
-  }, [adoptRemote]);
+  }, [adoptRemote, noteSyncFailure, runWithAuthRetry]);
 
   useEffect(() => {
     if (bootedRef.current) return;
     bootedRef.current = true;
 
     const bootstrap = async () => {
-      let remote: RemoteState | null = null;
-      try {
-        remote = await fetchRemote();
+      // v2 (docs/02 §5.2-1): silent refresh first. A rejected cookie means
+      // "not logged in": local cache still renders, ready is still set and
+      // no push is scheduled — offline-first is untouched.
+      const outcome = await attemptRefresh();
+      if (outcome === 'anonymous') {
+        loggedOutRef.current = true;
+        setSyncStatus('logged_out');
         setSyncError(null);
-      } catch (error) {
-        setSyncError(error instanceof SyncError ? error.code : 'sync_failed');
-        setSyncStatus('offline');
+      }
+
+      let remote: RemoteState | null = null;
+      if (outcome !== 'anonymous') {
+        try {
+          remote = await fetchRemote();
+          setSyncError(null);
+        } catch (error) {
+          noteSyncFailure(error);
+        }
       }
 
       const decision = decideBootstrap({
@@ -291,7 +398,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       prepareCurrent();
       setReady(true);
-      if (stateRef.current.onboarded) {
+      if (stateRef.current.onboarded && !loggedOutRef.current) {
         if (decision === 'keep-local' || deviceRef.current.dirty) {
           setSyncStatus('syncing');
           schedulePush();
@@ -300,13 +407,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
 
     void bootstrap();
-  }, [adoptRemote, prepareCurrent, schedulePush]);
+  }, [adoptRemote, attemptRefresh, noteSyncFailure, prepareCurrent, schedulePush]);
 
   useEffect(() => {
     const onVisible = () => {
       if (document.visibilityState === 'visible') void pullOnce();
     };
     const onOnline = () => {
+      void flushSecurityEvents();
       if (!stateRef.current.onboarded) return;
       if (deviceRef.current.dirty) {
         void pushNowRef.current();
@@ -372,6 +480,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     clearPinUnlock(pinUnlockStore());
     updateDevice(withoutDevicePin(deviceRef.current));
     recordSecurityEvent('pin-reset');
+    // v2 (docs/02 §5.2-5): best-effort cloud audit copy; queued while
+    // offline and flushed once the network is back. Never blocks local use.
+    reportSecurityEvent('pin-reset');
   }, [updateDevice]);
 
   const onboard = useCallback(async ({ nickname, dailyMinutes, pin }: OnboardInput) => {
@@ -435,6 +546,48 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [pullOnce, pushNow]);
 
+  /** Clears the logged-out gate and resumes the suspended sync (docs/02 §5.2-2). */
+  const resumeSyncAfterLogin = useCallback(() => {
+    loggedOutRef.current = false;
+    void flushSecurityEvents();
+    if (!stateRef.current.onboarded) return;
+    if (deviceRef.current.dirty || deviceRef.current.revision === 0) {
+      void pushNowRef.current();
+    } else {
+      void pullOnce();
+    }
+  }, [pullOnce]);
+
+  const parentLogin = useCallback(
+    async ({ username, password }: AuthFormsInput) => {
+      await loginRequest(username, password);
+      setParentAccount(currentAccount());
+      resumeSyncAfterLogin();
+    },
+    [resumeSyncAfterLogin],
+  );
+
+  const parentRegister = useCallback(
+    async ({ username, password }: AuthFormsInput) => {
+      await registerRequest(username, password);
+      setParentAccount(currentAccount());
+      resumeSyncAfterLogin();
+    },
+    [resumeSyncAfterLogin],
+  );
+
+  /**
+   * Local data and the dirty flag survive logout; the suspended push simply
+   * waits until the parent logs in again (docs/02 §5.2-2).
+   */
+  const parentLogout = useCallback(async () => {
+    await logoutRequest();
+    setParentAccount(null);
+    loggedOutRef.current = true;
+    setSyncStatus('logged_out');
+    setSyncError(null);
+  }, []);
+
   const exportData = useCallback(() => {
     downloadBackup(stateRef.current);
   }, []);
@@ -478,6 +631,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       syncNow,
       exportData,
       importData,
+      parentAccount,
+      parentLogin,
+      parentRegister,
+      parentLogout,
     }),
     [
       state,
@@ -502,6 +659,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       syncNow,
       exportData,
       importData,
+      parentAccount,
+      parentLogin,
+      parentRegister,
+      parentLogout,
     ],
   );
 

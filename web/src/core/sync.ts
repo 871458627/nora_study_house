@@ -74,7 +74,22 @@ function payloadToRemote(payload: ApiPayload): RemoteState {
   };
 }
 
+/**
+ * v2 self-hosted contract (docs/02 §5.1): the access token is injected by the
+ * app layer through an accessor set once at startup. This module keeps no
+ * token state of its own and never touches storage — it stays a stateless,
+ * replaceable contract module.
+ */
+let getAccessToken: (() => string | null | undefined) | null = null;
+
+export function configureSync(options: { getAccessToken: () => string | null | undefined }): void {
+  getAccessToken = options.getAccessToken;
+}
+
 async function request(input: RequestInfo, init: RequestInit): Promise<Response> {
+  const token = getAccessToken?.();
+  const headers = new Headers(init.headers);
+  if (token) headers.set('authorization', `Bearer ${token}`);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 8000);
   try {
@@ -82,6 +97,7 @@ async function request(input: RequestInfo, init: RequestInit): Promise<Response>
       credentials: 'same-origin',
       signal: controller.signal,
       ...init,
+      headers,
     });
   } catch {
     throw new SyncError('offline', 0);
@@ -93,7 +109,7 @@ async function request(input: RequestInfo, init: RequestInit): Promise<Response>
 export async function fetchRemote(): Promise<RemoteState> {
   let response: Response;
   try {
-    response = await request('/functions/v1/app?action=state', {
+    response = await request('/api/v1/state', {
       method: 'GET',
       headers: { accept: 'application/json' },
     });
@@ -108,8 +124,8 @@ export async function fetchRemote(): Promise<RemoteState> {
 export async function pushRemote(data: SyncState, baseRevision: number): Promise<RemoteState> {
   let response: Response;
   try {
-    response = await request('/functions/v1/app?action=state', {
-      method: 'POST',
+    response = await request('/api/v1/state', {
+      method: 'PUT',
       headers: { 'content-type': 'application/json', accept: 'application/json' },
       body: JSON.stringify({ data, baseRevision }),
     });

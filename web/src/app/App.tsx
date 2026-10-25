@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { useApp } from './AppProvider';
 import { ConflictDialog, PendingConflictBanner } from './ConflictDialog';
+import { LoginBanner } from './LoginBanner';
 import { Mascot } from '../components/Mascot';
 import { Icon } from '../components/Icon';
 import { SyncBadge, Toast } from '../components/ui';
@@ -124,6 +125,7 @@ export function App() {
     <div className={`app-root ${focusRoute ? 'focus-mode' : ''}`}>
       {!focusRoute ? <SiteNav /> : null}
       {!focusRoute ? <PendingConflictBanner /> : null}
+      {!focusRoute ? <LoginBanner /> : null}
       <main className="page-wrap">
         <Routes>
           <Route path="/" element={<TodayPage />} />

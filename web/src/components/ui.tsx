@@ -37,11 +37,13 @@ export function SyncBadge({ compact = false }: { compact?: boolean }) {
         ? '同步中'
         : syncStatus === 'conflict'
           ? '待处理'
-          : syncStatus === 'offline'
-            ? syncError === 'login_required'
-              ? '需登录'
-              : '离线'
-            : '待同步';
+          : syncStatus === 'logged_out'
+            ? '未登录'
+            : syncStatus === 'offline'
+              ? syncError === 'login_required'
+                ? '需登录'
+                : '离线'
+              : '待同步';
   return (
     <span className={`sync-badge ${syncStatus}`} title={`云端同步：${label}`}>
       <i aria-hidden="true" />
