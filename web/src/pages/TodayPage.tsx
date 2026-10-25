@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../app/AppProvider';
 import { Icon, type IconName } from '../components/Icon';
@@ -23,6 +23,7 @@ const KIND_ICON: Record<TaskKind, IconName> = {
 
 function TaskRow({ task, done }: { task: PlanTask; done: boolean }) {
   const meta = SUBJECT_BY_ID[task.subject];
+  const subjectVars = { '--subject-color': meta.color, '--subject-soft': meta.soft } as CSSProperties;
   const content = (
     <>
       <span className="task-icon" style={{ color: meta.color, background: meta.soft }}>
@@ -46,10 +47,14 @@ function TaskRow({ task, done }: { task: PlanTask; done: boolean }) {
   );
 
   if (done) {
-    return <div className="task-row done">{content}</div>;
+    return (
+      <div className="task-row done" style={subjectVars}>
+        {content}
+      </div>
+    );
   }
   return (
-    <Link to={`/task/${task.id}`} className="task-row">
+    <Link to={`/task/${task.id}`} className="task-row" style={subjectVars}>
       {content}
     </Link>
   );
@@ -121,25 +126,41 @@ export function TodayPage() {
       </section>
 
       <div className="stat-strip">
-        <div className="stat">
-          <Icon name="flame" size={18} />
-          <b>{state.rewards.streak}</b>
-          <small>连续打卡</small>
+        <div className="stat stat-flame">
+          <span className="stat-icon">
+            <Icon name="flame" size={20} />
+          </span>
+          <span className="stat-body">
+            <b>{state.rewards.streak}</b>
+            <small>连续打卡</small>
+          </span>
         </div>
-        <div className="stat">
-          <Icon name="star" size={18} />
-          <b>{state.rewards.stars}</b>
-          <small>累计星星</small>
+        <div className="stat stat-star">
+          <span className="stat-icon">
+            <Icon name="star" size={20} />
+          </span>
+          <span className="stat-body">
+            <b>{state.rewards.stars}</b>
+            <small>累计星星</small>
+          </span>
         </div>
-        <div className="stat">
-          <Icon name="food" size={18} />
-          <b>{state.rewards.food}</b>
-          <small>桃粮</small>
+        <div className="stat stat-food">
+          <span className="stat-icon">
+            <Icon name="food" size={20} />
+          </span>
+          <span className="stat-body">
+            <b>{state.rewards.food}</b>
+            <small>桃粮</small>
+          </span>
         </div>
-        <div className="stat">
-          <Icon name="medal" size={18} />
-          <b>{state.pet.fedDays}</b>
-          <small>喂养天数</small>
+        <div className="stat stat-heart">
+          <span className="stat-icon">
+            <Icon name="heart" size={20} />
+          </span>
+          <span className="stat-body">
+            <b>{state.pet.fedDays}</b>
+            <small>喂养天数</small>
+          </span>
         </div>
       </div>
 

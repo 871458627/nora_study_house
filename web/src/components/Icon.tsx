@@ -26,6 +26,8 @@ export type IconName =
   | 'alert'
   | 'arrow'
   | 'medal'
+  | 'heart'
+  | 'calendar'
   | 'download'
   | 'upload'
   | 'wifi-off'
@@ -143,6 +145,15 @@ const ICONS: Record<IconName, ReactNode> = {
       <circle cx="12" cy="9.5" r="5.4" />
       <path d="M9 14.5 7.5 21l4.5-2.4L16.5 21 15 14.5" />
       <path d="m12 6.6 1 2 2.2.3-1.6 1.6.4 2.2-2-1-2 1 .4-2.2-1.6-1.6 2.2-.3 1-2Z" fill="currentColor" stroke="none" />
+    </>
+  ),
+  heart: (
+    <path d="M12 20.2s-7.6-4.7-7.6-10C4.4 7.5 6.5 5.6 9 5.6c1.3 0 2.4.6 3 1.7.6-1.1 1.7-1.7 3-1.7 2.5 0 4.6 1.9 4.6 4.6 0 5.3-7.6 10-7.6 10Z" />
+  ),
+  calendar: (
+    <>
+      <rect x="4" y="5.5" width="16" height="14.5" rx="3" />
+      <path d="M4 10.5h16M8.5 3.5v3M15.5 3.5v3" />
     </>
   ),
   download: (
