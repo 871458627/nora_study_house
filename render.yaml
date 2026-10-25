@@ -9,7 +9,7 @@ services:
     plan: free
     region: singapore
     healthCheckPath: /api/v1/health
-    buildCommand: cd web && npm ci && npm run build && cd ../server && npm ci --workspaces=false && npx prisma generate && npm run build
+    buildCommand: npm ci && npm run build --workspace web && npm run build --workspace server
     startCommand: cd server && node dist/src/app.js
     envVars:
       - key: WEB_DIST_DIR

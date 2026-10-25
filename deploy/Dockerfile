@@ -3,20 +3,24 @@
 # 构建上下文 = 仓库根（compose 里 context: ..）。
 
 FROM node:20-alpine AS build-web
-WORKDIR /app/web
-COPY web/package.json web/package-lock.json ./
+# monorepo 统一安装（根 lock 覆盖 web+server）
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY web/package.json web/
+COPY server/package.json server/
 RUN npm ci
-COPY web/ ./
-RUN npm run build
+COPY web/ web/
+RUN npm run build --workspace web
 
 FROM node:20-alpine AS build-server
-# Prisma 引擎在 alpine 上需要 openssl 兼容层
 RUN apk add --no-cache openssl
-WORKDIR /app/server
-COPY server/package.json server/package-lock.json ./
-RUN npm ci --workspaces=false
-COPY server/ ./
-RUN npx prisma generate && npm run build
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY web/package.json web/
+COPY server/package.json server/
+RUN npm ci
+COPY server/ server/
+RUN npm run build --workspace server && npm run postbuild --workspace server
 
 FROM node:20-alpine
 RUN apk add --no-cache openssl
@@ -26,8 +30,8 @@ ENV NODE_ENV=production \
     PORT=8787 \
     XTAO_REPO=prisma \
     WEB_DIST_DIR=/app/web-dist
-# 保留完整 node_modules（含 prisma CLI），供 `docker compose run --rm api npx prisma migrate deploy`
-COPY --from=build-server /app/server/node_modules ./node_modules
+# 保留根 node_modules（提升布局：包在 /app/node_modules），prisma CLI 供 migrate deploy
+COPY --from=build-server /app/node_modules /app/node_modules
 COPY --from=build-server /app/server/dist ./dist
 COPY --from=build-server /app/server/prisma ./prisma
 COPY --from=build-server /app/server/package.json ./
