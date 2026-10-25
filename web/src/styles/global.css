@@ -5707,3 +5707,137 @@ a.task-row:active {
     padding: 14px 16px;
   }
 }
+
+/* ============================================================
+   宠物商店（2026-10-25 用户需求：星星兑换伙伴）
+   ============================================================ */
+
+.shop-balance {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: #fff3d4;
+  color: var(--amber);
+}
+
+.shop-balance b {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.shop-balance small {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.shop-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 18px 16px 16px;
+  text-align: center;
+}
+
+.shop-card.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(0, 113, 227, 0.18);
+}
+
+.shop-card-art {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+  padding: 6px 0 2px;
+}
+
+.shop-active-pill {
+  position: absolute;
+  top: 0;
+  right: -6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2.5px 9px;
+  border-radius: 999px;
+}
+
+.shop-card b {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.shop-card .shop-tagline {
+  color: var(--sub);
+  font-size: 12.5px;
+}
+
+.shop-card .shop-preview-note {
+  color: var(--ter);
+  font-size: 11.5px;
+  line-height: 1.5;
+  min-height: 2.9em;
+  display: flex;
+  align-items: center;
+}
+
+.shop-card .btn {
+  margin-top: 4px;
+}
+
+.shop-shortfall {
+  margin-top: 4px;
+  color: var(--ter);
+  font-size: 11.5px;
+}
+
+.shop-footnote {
+  margin-top: 22px;
+  text-align: center;
+}
+
+.pet-shop-entry {
+  display: flex;
+  gap: 12px;
+  padding: 16px 18px;
+}
+
+.pet-shop-entry .rail-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #fff3d4;
+  color: var(--amber);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pet-shop-entry > div {
+  min-width: 0;
+}
+
+.pet-shop-entry b {
+  font-size: 15.5px;
+  font-weight: 700;
+}
+
+.pet-shop-entry p {
+  margin: 2px 0 4px;
+  color: var(--sub);
+  font-size: 12.5px;
+  line-height: 1.55;
+}

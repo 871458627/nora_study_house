@@ -1,3 +1,4 @@
+import { DEFAULT_PET_ID, PET_BY_ID } from '../data/pets';
 import { DEFAULT_SETTINGS, DEFAULT_TIMETABLE } from '../data/defaults';
 import type {
   Lesson,
@@ -64,6 +65,13 @@ export interface PetState {
   lastDecayDate?: string;
   unlocked: string[];
   equipped: Record<string, string>;
+  /** 当前陪伴伙伴（宠物商城皮肤 id，src/data/pets.ts） */
+  skin?: string;
+}
+
+/** 宠物商城：已拥有的伙伴（星星兑换，FR-P1-01 的宠物部分） */
+export interface ShopState {
+  owned: string[];
 }
 
 export interface DailyLog {
@@ -103,6 +111,7 @@ export interface SyncState {
   weakness: Record<string, WeaknessEntry>;
   dictationQueue: Record<string, DictationEntry>;
   rewards: Rewards;
+  shop: ShopState;
   pet: PetState;
   dailyPlans: Record<string, DailyPlan>;
   dailyLogs: Record<string, DailyLog>;
@@ -141,12 +150,14 @@ export function createInitialState(): SyncState {
       bestStreak: 0,
       badges: [],
     },
+    shop: { owned: [] },
     pet: {
       satiety: 70,
       stage: 0,
       fedDays: 0,
       unlocked: [],
       equipped: {},
+      skin: 'xiaotao',
     },
     dailyPlans: {},
     dailyLogs: {},
@@ -286,6 +297,7 @@ export function normalizeState(value: unknown): SyncState | null {
   const settings = isRecord(value.settings) ? value.settings : {};
   const rewards = isRecord(value.rewards) ? value.rewards : {};
   const pet = isRecord(value.pet) ? value.pet : {};
+  const shop = isRecord(value.shop) ? value.shop : {};
   const lessonsSource = isRecord(value.lessons) ? value.lessons : {};
   const lessons: Record<string, LessonProgress> = {};
   for (const [id, raw] of Object.entries(lessonsSource)) {
@@ -392,6 +404,15 @@ export function normalizeState(value: unknown): SyncState | null {
             ),
           )
         : {},
+      skin:
+        typeof pet.skin === 'string' && PET_BY_ID[pet.skin] ? pet.skin : DEFAULT_PET_ID,
+    },
+    shop: {
+      owned: Array.isArray(shop.owned)
+        ? Array.from(
+            new Set(shop.owned.filter((id): id is string => typeof id === 'string' && !!PET_BY_ID[id])),
+          )
+        : [],
     },
     dailyPlans: normalizePlans(value.dailyPlans),
     dailyLogs: normalizeLogs(value.dailyLogs),

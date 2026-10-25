@@ -1,4 +1,5 @@
 import { ACCESSORIES } from '../data/defaults';
+import { PET_BY_ID } from '../data/pets';
 import { lessonsForSubject } from '../data/content';
 import type { Lesson, SubjectId, Timetable } from '../data/types';
 import { todayKey } from './date';
@@ -31,7 +32,9 @@ export type AppAction =
   | { type: 'free-practice'; date: string; lesson: Lesson; outcome: TaskOutcome }
   | { type: 'review-dictation'; date: string; words: { wordId: string; correct: boolean }[] }
   | { type: 'feed'; date: string; kind: 'food' | 'meal' }
-  | { type: 'equip'; slot: string; itemId: string | null };
+  | { type: 'equip'; slot: string; itemId: string | null }
+  | { type: 'shop-buy'; petId: string }
+  | { type: 'shop-equip'; petId: string };
 
 function withPlan(state: SyncState, date: string): SyncState {
   if (state.dailyPlans[date]) return state;
@@ -149,6 +152,32 @@ export function appReducer(state: SyncState, action: AppAction): SyncState {
       return {
         ...state,
         pet: { ...state.pet, equipped },
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    case 'shop-buy': {
+      // 星级不足 / 重复拥有 / 未知商品 → 返回原 state（FR-P1-01 口径）
+      const skin = PET_BY_ID[action.petId];
+      if (!skin || state.shop.owned.includes(action.petId)) return state;
+      if (state.rewards.stars < skin.price) return state;
+      return {
+        ...state,
+        rewards: { ...state.rewards, stars: state.rewards.stars - skin.price },
+        shop: { owned: [...state.shop.owned, action.petId] },
+        pet: { ...state.pet, skin: action.petId },
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    case 'shop-equip': {
+      // 0 价初始伙伴恒可装备；其余须在已拥有集合内
+      const target = PET_BY_ID[action.petId];
+      if (!target || (target.price > 0 && !state.shop.owned.includes(action.petId))) return state;
+      if (state.pet.skin === action.petId) return state;
+      return {
+        ...state,
+        pet: { ...state.pet, skin: action.petId },
         updatedAt: new Date().toISOString(),
       };
     }

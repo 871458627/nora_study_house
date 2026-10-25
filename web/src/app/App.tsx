@@ -12,6 +12,7 @@ import { TextbookPage } from '../pages/TextbookPage';
 import { LessonPage } from '../pages/LessonPage';
 import { TaskPage } from '../pages/TaskPage';
 import { PetPage } from '../pages/PetPage';
+import { ShopPage } from '../pages/ShopPage';
 import { RecordsPage } from '../pages/RecordsPage';
 import { ReportPage } from '../pages/ReportPage';
 import { SettingsPage } from '../pages/SettingsPage';
@@ -138,6 +139,7 @@ export function App() {
           <Route path="/mistake/:questionId" element={<MistakeRetryPage />} />
           <Route path="/dictation/review" element={<DictationReviewPage />} />
           <Route path="/pet" element={<PetPage />} />
+          <Route path="/shop" element={<ShopPage />} />
           <Route path="/records" element={<RecordsPage />} />
           <Route path="/report" element={<ReportPage />} />
           <Route path="/settings" element={<SettingsPage />} />

@@ -1,6 +1,8 @@
 import { useApp } from '../app/AppProvider';
 import { Icon, type IconName } from '../components/Icon';
 import { Mascot } from '../components/Mascot';
+import { Link } from 'react-router-dom';
+import { petSkinFor } from '../data/pets';
 import { ProgressBar } from '../components/ui';
 import { ACCESSORIES, BADGES } from '../data/defaults';
 import { todayKey } from '../core/date';
@@ -25,6 +27,7 @@ export function PetPage() {
     ? Math.min(100, (state.pet.fedDays / next.minDays) * 100)
     : 100;
   const full = state.pet.satiety >= 100;
+  const currentSkin = petSkinFor(state.pet.skin);
 
   const feed = (kind: 'food' | 'meal') => {
     const available = kind === 'food' ? state.rewards.food : state.rewards.meals;
@@ -49,7 +52,7 @@ export function PetPage() {
     <div className="page pet-page">
       <header className="page-head">
         <div>
-          <p className="eyebrow">小桃 · 成长第 {state.pet.fedDays} 天</p>
+          <p className="eyebrow">{currentSkin.name} · 成长第 {state.pet.fedDays} 天</p>
           <h1>学习有回响，小桃有回应。</h1>
           <p className="page-lede">
             完成任务得到桃粮，喂饱小桃，解锁饰品。奖励只跟努力有关，不会因为一次失误被收回。
@@ -65,7 +68,7 @@ export function PetPage() {
           </span>
           <div className="pet-stage-caption">{moodLine(mood, state.profile.nickname)}</div>
           <div className="pet-main">
-            <Mascot mood={mood} equipped={state.pet.equipped} size={188} />
+            <Mascot mood={mood} equipped={state.pet.equipped} petId={state.pet.skin} size={188} />
           </div>
           <div className="pet-stage-foot">
             <div>
@@ -115,6 +118,22 @@ export function PetPage() {
               </button>
             </div>
             <p className="pin-note">饱食度每天会自然减少 15 点，多喂几天就能看到小桃长大。</p>
+          </section>
+
+          <section className="card pet-shop-entry">
+            <span className="rail-icon">
+              <Icon name="star" size={18} />
+            </span>
+            <div>
+              <b>宠物商店</b>
+              <p>
+                攒星星接新伙伴回家，现在有 {state.rewards.stars} 颗。
+                {currentSkin.name !== '小桃' ? `现在陪着你的是 ${currentSkin.name}。` : ''}
+              </p>
+              <Link to="/shop" className="text-link">
+                去逛商店 <Icon name="chevron" size={13} />
+              </Link>
+            </div>
           </section>
 
           <section className="card pet-stats">

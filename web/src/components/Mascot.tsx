@@ -1,21 +1,50 @@
+import { petSkinFor, type PetSkin } from '../data/pets';
+
 export type MascotMood = 'happy' | 'normal' | 'hungry' | 'sad' | 'celebrate';
 
 const MOOD_LABEL: Record<MascotMood, string> = {
-  happy: '小桃开心地眯着眼睛',
-  normal: '小桃安静地看着你',
-  hungry: '小桃肚子饿了',
-  sad: '小桃有点失落',
-  celebrate: '小桃在为你庆祝',
+  happy: '小伙伴开心地眯着眼睛',
+  normal: '小伙伴安静地看着你',
+  hungry: '小伙伴肚子饿了',
+  sad: '小伙伴有点失落',
+  celebrate: '小伙伴在为你庆祝',
 };
 
-/* 小桃 v3（iOS 化后的形象重绘）：
-   - 头身一体的饱满桃子，奶油质感：底部深、上部亮的柔和渐变（两个色层叠加）
-   - 兔耳更长更挺，内耳加大，顶部叶子更立体（两片 + 叶脉）
-   - 高光与腮红提升通透感；五官色统一暖棕，与 iOS 近黑文字协调
-   - 五种 mood 的五官坐标与旧版兼容，配饰槽位（cape/scarf/glasses/bow/crown）不动 */
+/* 小伙伴绘制（v3 重绘 + 宠物商城皮肤扩展）：
+   - 同一套 SVG 骨架渲染全部角色（宠物商城目录 src/data/pets.ts），
+     皮肤只换调色板与耳朵形态，保证 N 个角色的绘制质量一致
+   - 五种 mood 的五官坐标在各皮肤下通用；配饰槽位全兼容
+   - viewBox 120×130 与全站调用比例不变 */
 
 const INK = '#5C3A44';
 const MOUTH = '#9E4B5E';
+
+function Ears({ skin }: { skin: PetSkin }) {
+  if (skin.earStyle === 'none') {
+    // 果实系：顶部小凸起代替耳朵
+    return <path d="M60 40c-3 2.5-3 6 0 8.5 3-2.5 3-6 0-8.5Z" fill={skin.ear} />;
+  }
+  if (skin.earStyle === 'round') {
+    // 圆耳系（仓鼠感）
+    return (
+      <>
+        <circle cx="36" cy="52" r="11.5" fill={skin.ear} />
+        <circle cx="84" cy="52" r="11.5" fill={skin.ear} />
+        <circle cx="36" cy="52" r="6" fill={skin.earInner} />
+        <circle cx="84" cy="52" r="6" fill={skin.earInner} />
+      </>
+    );
+  }
+  // 兔耳
+  return (
+    <>
+      <ellipse cx="42.5" cy="30" rx="12" ry="26" fill={skin.ear} transform="rotate(-15 42.5 30)" />
+      <ellipse cx="77.5" cy="30" rx="12" ry="26" fill={skin.ear} transform="rotate(15 77.5 30)" />
+      <ellipse cx="42.5" cy="32" rx="6.6" ry="17" fill={skin.earInner} transform="rotate(-15 42.5 32)" />
+      <ellipse cx="77.5" cy="32" rx="6.6" ry="17" fill={skin.earInner} transform="rotate(15 77.5 32)" />
+    </>
+  );
+}
 
 function Eyes({ mood }: { mood: MascotMood }) {
   if (mood === 'happy' || mood === 'celebrate') {
@@ -83,13 +112,17 @@ export function Mascot({
   mood = 'normal',
   equipped = {},
   size = 120,
+  petId,
   className,
 }: {
   mood?: MascotMood;
   equipped?: Record<string, string>;
   size?: number;
+  /** 宠物商城皮肤 id；未传回落当前装备皮肤 */
+  petId?: string;
   className?: string;
 }) {
+  const skin = petSkinFor(petId);
   const headId = equipped.head;
   const neckId = equipped.neck;
   const faceId = equipped.face;
@@ -101,7 +134,7 @@ export function Mascot({
       height={(size * 130) / 120}
       viewBox="0 0 120 130"
       role="img"
-      aria-label={MOOD_LABEL[mood]}
+      aria-label={`${skin.name}：${MOOD_LABEL[mood]}`}
     >
       {neckId === 'cape' && (
         <path
@@ -111,44 +144,30 @@ export function Mascot({
           strokeWidth="1.6"
         />
       )}
-      {/* 兔耳：外耳 + 内耳 */}
-      <ellipse cx="42.5" cy="30" rx="12" ry="26" fill="#F6B7C8" transform="rotate(-15 42.5 30)" />
-      <ellipse cx="77.5" cy="30" rx="12" ry="26" fill="#F6B7C8" transform="rotate(15 77.5 30)" />
-      <ellipse cx="42.5" cy="32" rx="6.6" ry="17" fill="#FDE0E9" transform="rotate(-15 42.5 32)" />
-      <ellipse cx="77.5" cy="32" rx="6.6" ry="17" fill="#FDE0E9" transform="rotate(15 77.5 32)" />
-      {/* 桃形头身：主体 + 顶部提亮 + 底部落影，构成柔和立体感 */}
+      <Ears skin={skin} />
+      {/* 桃形头身：主体 + 顶部提亮 + 底部落影 */}
       <path
         d="M60 44c-22.5 0-38.5 18-38.5 40.5C21.5 108 39 122.5 60 122.5S98.5 108 98.5 84.5C98.5 62 82.5 44 60 44Z"
-        fill={mood === 'sad' ? '#F5CFDA' : '#F9D7E1'}
+        fill={mood === 'sad' ? skin.bodyShade : skin.body}
       />
       <path
         d="M60 44c-14 0-25.5 6.8-32 17.2 7.5-6.4 18.6-10.4 32-10.4s24.5 4 32 10.4C85.5 50.8 74 44 60 44Z"
-        fill="#FCE4EC"
+        fill={skin.bodyLight}
       />
       <path
         d="M60 118.5c-18.6 0-33.9-10-37.5-25.4C25.4 106.3 40.8 116 60 116s34.6-9.7 37.5-22.9C93.9 108.5 78.6 118.5 60 118.5Z"
-        fill="#F3BFCE"
+        fill={skin.bodyShade}
         opacity=".55"
       />
-      {/* 顶叶：两片 + 中脉 */}
-      <path d="M60 44c-1 4-1 8 0 12 1-4 1-8 0-12Z" fill="#E89BB4" />
-      <path d="M60 45.5C56 35 47 31.5 39 34c1.6 9.4 10.4 14.6 21 11.5Z" fill="#8FCBAF" />
-      <path d="M43 36.2c5.6.4 11 3.6 14.6 8.2" stroke="#6FAE8F" strokeWidth="1.4" fill="none" strokeLinecap="round" />
-      <path d="M61 45.5c4-10.4 13-14 21-11.4-1.6 9.3-10.4 14.5-21 11.4Z" fill="#A5D8BE" />
-      <path d="M77 36.2c-5.6.4-11 3.6-14.6 8.2" stroke="#7FBE9E" strokeWidth="1.4" fill="none" strokeLinecap="round" />
+      {/* 顶叶：两片 + 叶脉（果实系挂在顶部凸起上） */}
+      <path d="M60 44c-1 4-1 8 0 12 1-4 1-8 0-12Z" fill={skin.blush} opacity=".7" />
+      <path d="M60 45.5C56 35 47 31.5 39 34c1.6 9.4 10.4 14.6 21 11.5Z" fill={skin.leaf} />
+      <path d="M43 36.2c5.6.4 11 3.6 14.6 8.2" stroke={skin.leafVein} strokeWidth="1.4" fill="none" strokeLinecap="round" />
+      <path d="M61 45.5c4-10.4 13-14 21-11.4-1.6 9.3-10.4 14.5-21 11.4Z" fill={skin.leafDeep} />
+      <path d="M77 36.2c-5.6.4-11 3.6-14.6 8.2" stroke={skin.leafVein} strokeWidth="1.4" fill="none" strokeLinecap="round" />
       <Eyes mood={mood} />
-      {(mood === 'happy' || mood === 'celebrate' || mood === 'normal') && (
-        <>
-          <ellipse cx="39.5" cy="89.5" rx="6" ry="3.6" fill="#F0A3BA" opacity=".6" />
-          <ellipse cx="80.5" cy="89.5" rx="6" ry="3.6" fill="#F0A3BA" opacity=".6" />
-        </>
-      )}
-      {mood === 'sad' && (
-        <>
-          <ellipse cx="39.5" cy="89.5" rx="5" ry="3" fill="#E9A2B7" opacity=".4" />
-          <ellipse cx="80.5" cy="89.5" rx="5" ry="3" fill="#E9A2B7" opacity=".4" />
-        </>
-      )}
+      <ellipse cx="39.5" cy="89.5" rx="6" ry="3.6" fill={skin.blush} opacity=".55" />
+      <ellipse cx="80.5" cy="89.5" rx="6" ry="3.6" fill={skin.blush} opacity=".55" />
       <Mouth mood={mood} />
       {neckId === 'scarf' && (
         <>

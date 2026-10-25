@@ -82,7 +82,7 @@ export function TodayPage() {
       <header className="page-head today-head">
         <h1>今天</h1>
         <span className="today-avatar" aria-hidden="true">
-          <Mascot mood={mood} equipped={state.pet.equipped} size={44} />
+          <Mascot mood={mood} equipped={state.pet.equipped} petId={state.pet.skin} size={44} />
         </span>
       </header>
       <div className="today-chips">
@@ -163,7 +163,7 @@ export function TodayPage() {
 
           {tasks.length === 0 ? (
             <div className="card empty-plan">
-              <Mascot mood="normal" size={80} />
+              <Mascot mood="normal" petId={state.pet.skin} size={80} />
               <div>
                 <b>今天暂时没有生成任务</b>
                 <p>如果刚打开应用，稍等片刻；也可以到课本页自己选一课来练。</p>
@@ -217,7 +217,7 @@ export function TodayPage() {
                 <span className="eyebrow">小桃今天</span>
                 <h2>{stage.name}</h2>
               </div>
-              <Mascot mood={mood} equipped={state.pet.equipped} size={64} />
+              <Mascot mood={mood} equipped={state.pet.equipped} petId={state.pet.skin} size={64} />
             </div>
             <p className="pet-line">{moodLine(mood, state.profile.nickname)}</p>
             <div className="satiety-row">
