@@ -22,9 +22,11 @@ import { createPrismaRepository } from './repos/prisma.js'
 import { authRoutes, type RateWindow } from './routes/auth.js'
 import { healthRoutes } from './routes/health.js'
 import { securityEventsRoutes } from './routes/securityEvents.js'
+import { gradeRoutes } from './routes/grade.js'
 import { stateRoutes } from './routes/state.js'
 import { AuditService } from './services/auditService.js'
 import { AuthService } from './services/authService.js'
+import { GradeService } from './services/gradeService.js'
 import { StateService } from './services/stateService.js'
 
 export interface RateLimitsConfig {
@@ -178,6 +180,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
 
   const authService = new AuthService({ repo, issuer, clock, refreshTokenTtlSeconds: config.refreshTokenTtlSeconds })
   const auditService = new AuditService({ repo, clock })
+  const gradeService = new GradeService({ repo, clock })
   const stateService = new StateService({
     repo,
     clock,
@@ -206,6 +209,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     issuer,
     rateLimits: { post: rateLimits.securityEventPost },
   })
+  await app.register(gradeRoutes, { prefix: '/api/v1', gradeService, issuer })
   await app.register(healthRoutes, { prefix: '/api/v1', repo, version: config.appVersion })
 
   // 同源静态托管（docs/08 免费部署方案）：refresh cookie 是 SameSite=Strict，

@@ -1,4 +1,4 @@
-import { dictationWordById, lessonAt, lessonsForSubject, lessonById } from '../data/content';
+import { dictationWordById, lessonAt, lessonsForSubject, lessonById, oralStageForCurrentPack } from '../data/content';
 import type { DictationWord, Lesson, PlanTask, Question, SubjectId } from '../data/types';
 import { addDays, diffDays, weekdayIndex } from './date';
 import { currentLessonIndex, type SyncState } from './model';
@@ -105,13 +105,14 @@ function makeWordsTask(date: string, lesson: Lesson): PlanTask | null {
 
 function makeOralTask(state: SyncState, date: string): PlanTask {
   const lesson = reviewLesson(state, 'math');
+  const stage = (lesson ? oralStageForCurrentPack(lesson.order) : undefined) ?? oralStageForLesson(lesson?.id);
   return {
     id: makeTaskId(date, 'oral', lesson?.id ?? 'math'),
     kind: 'oral',
     subject: 'math',
     lessonId: lesson?.id ?? '',
     title: '口算小练习',
-    subtitle: oralSubtitle(oralStageForLesson(lesson?.id)),
+    subtitle: oralSubtitle(stage),
     minutes: TASK_MINUTES.oral,
   };
 }
@@ -305,7 +306,9 @@ export function questionsForTask(task: PlanTask): Question[] {
       .filter((question): question is Question => Boolean(question));
   }
   if (task.kind === 'oral') {
-    return generateOralQuestions(task.id, 5, oralStageForLesson(task.lessonId));
+    const lesson = lessonById(task.lessonId);
+    const stage = (lesson ? oralStageForCurrentPack(lesson.order) : undefined) ?? oralStageForLesson(task.lessonId);
+    return generateOralQuestions(task.id, 5, stage);
   }
   const lesson = lessonById(task.lessonId);
   if (!lesson) return [];

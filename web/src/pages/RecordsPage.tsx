@@ -1,5 +1,8 @@
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../app/AppProvider';
+import { fetchGradeArchives, type GradeArchiveEntry } from '../app/auth';
+import { gradeLabel } from '../data/content';
 import { Icon } from '../components/Icon';
 import { ProgressBar, SubjectChip } from '../components/ui';
 import { BADGES } from '../data/defaults';
@@ -15,8 +18,27 @@ import type { DictationWord } from '../data/types';
 
 const WEEKDAY_SHORT = ['一', '二', '三', '四', '五', '六', '日'];
 
+function archiveGradeLabel(gradeKey: string): string {
+  const grade = Number(gradeKey.slice(1, 2));
+  const semester = gradeKey.endsWith('s1') ? '上册' : '下册';
+  return `${gradeLabel(grade as 1)} · ${semester}`;
+}
+
+function downloadArchive(entry: GradeArchiveEntry): void {
+  const payload = JSON.stringify({ app: 'xiaotao-study-house', kind: 'grade-archive', gradeKey: entry.gradeKey, exportedAt: new Date().toISOString(), snapshot: entry.snapshot }, null, 2);
+  const blob = new Blob([payload], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `xiaotao-archive-${entry.gradeKey}.json`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 export function RecordsPage() {
-  const { state } = useApp();
+  const { state, parentAccount } = useApp();
   const today = todayKey();
   const weekStart = startOfWeek(today);
   const heatStart = addDays(weekStart, -77);
@@ -65,6 +87,22 @@ export function RecordsPage() {
     })
     .filter((item): item is NonNullable<typeof item> => Boolean(item))
     .slice(0, 16);
+  const [gradeArchiveList, setGradeArchiveList] = useState<GradeArchiveEntry[]>([]);
+  const loadArchives = useCallback(() => {
+    if (!parentAccount) return;
+    fetchGradeArchives()
+      .then((entries) => setGradeArchiveList(entries.filter((entry) => {
+        const grade = Number(entry.gradeKey.slice(1, 2));
+        const semester = entry.gradeKey.endsWith('s1') ? 's1' : 's2';
+        const override = state.semesterOverride;
+        return !(grade === (state.grade ?? 2) && (override ?? semester) === semester);
+      })))
+      .catch(() => setGradeArchiveList([]));
+  }, [parentAccount, state.grade, state.semesterOverride]);
+
+  useEffect(() => {
+    loadArchives();
+  }, [loadArchives]);
 
   return (
     <div className="page records-page">
@@ -218,7 +256,33 @@ export function RecordsPage() {
             </div>
           </section>
 
-          <section className="card records-card">
+          <section className="card">
+              <div className="section-title">
+                <h2>历史年级</h2>
+                <span className="section-aside">{gradeArchiveList.length} 册已封存</span>
+              </div>
+              {gradeArchiveList.length === 0 ? (
+                <p className="settings-note">切换年级后，旧年级的进度与错题会完整封存在这里，随时可查看和导出。</p>
+              ) : (
+                <div className="current-lesson-list">
+                  {gradeArchiveList.map((entry) => (
+                    <div key={entry.gradeKey} className="task-row" style={{ alignItems: 'center' }}>
+                      <div style={{ minWidth: 0 }}>
+                        <b>{archiveGradeLabel(entry.gradeKey)}</b>
+                        <span className="task-meta" style={{ display: 'block' }}>
+                          学过 {String(entry.summary['lessons'] ?? 0)} 课 · 待订正错题 {String(entry.summary['unresolvedMistakes'] ?? 0)} 道
+                        </span>
+                      </div>
+                      <button type="button" className="text-link" onClick={() => downloadArchive(entry)}>
+                        导出 JSON
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="card records-card">
             <div className="section-title">
               <h2>错题本</h2>
               <span className="section-aside">

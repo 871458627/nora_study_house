@@ -5,6 +5,7 @@ import { AppError } from '../errors.js'
 import type {
   AccountRecord,
   CasUpdateResult,
+  GradeArchiveRecord,
   HistoryRecord,
   InsertFirstResult,
   RefreshTokenRecord,
@@ -20,6 +21,7 @@ export class MemoryRepository implements Repository {
   private readonly refreshTokenIdByHash = new Map<string, string>()
   private readonly stateByFamilyId = new Map<string, StateRecord>()
   private readonly historyByFamilySlot = new Map<string, HistoryRecord>()
+  private readonly gradeArchiveMap = new Map<string, GradeArchiveRecord>()
   private readonly securityEventLog: SecurityEventRecord[] = []
   /** 插入序号：createdAt 同毫秒时的确定性次级排序（测试可重复性的基础设施保障）。 */
   private readonly securityEventSeq = new Map<string, number>()
@@ -124,6 +126,25 @@ export class MemoryRepository implements Repository {
     },
     listHistory: async (familyId: string): Promise<HistoryRecord[]> =>
       [...this.historyByFamilySlot.values()].filter((row) => row.familyId === familyId).sort((a, b) => b.revision - a.revision),
+  }
+
+  readonly gradeArchives = {
+    upsert: async (input: { familyId: string; gradeKey: string; snapshot: Record<string, unknown>; summary: Record<string, unknown>; now: Date }): Promise<void> => {
+      this.gradeArchiveMap.set(`${input.familyId}:${input.gradeKey}`, {
+        familyId: input.familyId,
+        gradeKey: input.gradeKey,
+        snapshot: input.snapshot,
+        summary: input.summary,
+        createdAt: input.now,
+      })
+    },
+    findByKey: async (familyId: string, gradeKey: string): Promise<GradeArchiveRecord | null> =>
+      this.gradeArchiveMap.get(`${familyId}:${gradeKey}`) ?? null,
+    delete: async (familyId: string, gradeKey: string): Promise<void> => {
+      this.gradeArchiveMap.delete(`${familyId}:${gradeKey}`)
+    },
+    listByFamily: async (familyId: string): Promise<GradeArchiveRecord[]> =>
+      [...this.gradeArchiveMap.values()].filter((row) => row.familyId === familyId).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
   }
 
   readonly securityEvents = {

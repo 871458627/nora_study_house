@@ -116,9 +116,15 @@ export interface FreePracticeLog {
   dictationCorrect: number;
 }
 
+export type Grade = 1 | 2 | 3 | 4 | 5 | 6;
+export type Semester = 's1' | 's2';
+
 export interface SyncState {
   schemaVersion: 1;
   onboarded: boolean;
+  /** 当前年级（docs/12）：缺省 2，兼容存量数据；学期自动判定 + 手动覆盖。 */
+  grade: Grade;
+  semesterOverride?: Semester;
   profile: { nickname: string };
   settings: AppSettings;
   timetable: Timetable;
@@ -155,6 +161,7 @@ export function createInitialState(): SyncState {
   return {
     schemaVersion: SCHEMA_VERSION,
     onboarded: false,
+    grade: 2,
     profile: { nickname: '小朋友' },
     settings: { ...DEFAULT_SETTINGS },
     timetable: DEFAULT_TIMETABLE.map(row => [...row]),
@@ -402,8 +409,14 @@ export function normalizeState(value: unknown): SyncState | null {
     math: Math.max(0, Number(pointersSource.math) || 0),
     english: Math.max(0, Number(pointersSource.english) || 0),
   };
+  const rawGrade = Number(value.grade);
+  const grade = Number.isInteger(rawGrade) && rawGrade >= 1 && rawGrade <= 6 ? (rawGrade as Grade) : 2;
+  const semesterOverride =
+    value.semesterOverride === 's1' || value.semesterOverride === 's2' ? value.semesterOverride : undefined;
   return {
     ...base,
+    grade,
+    semesterOverride,
     onboarded: value.onboarded === true,
     profile: {
       nickname:

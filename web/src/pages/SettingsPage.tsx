@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { autoSemester, SUBJECTS } from '../data/content';
+import type { Grade } from '../core/model';
 import { useApp } from '../app/AppProvider';
 import { AuthError } from '../app/auth';
 import { Icon } from '../components/Icon';
@@ -23,7 +25,7 @@ const SYNC_LABEL: Record<string, string> = {
   synced: '已同步',
   offline: '离线，改动已留在本机',
   conflict: '有待处理的版本冲突',
-  logged_out: '未登录，等待家长登录后同步',
+  logged_out: '未登录：可以浏览，学习暂停，等家长登录',
 };
 
 const ERROR_LABEL: Record<string, string> = {
@@ -68,6 +70,9 @@ const SLOT_OPTIONS: { value: string; label: string }[] = [
   { value: 'other', label: SLOT_LABEL.other },
 ];
 
+const GRADE_OPTIONS = [1, 2, 3, 4, 5, 6].map((g) => ({ value: g, label: ['一年级', '二年级', '三年级', '四年级', '五年级', '六年级'][g - 1] }));
+const SEMESTER_LABEL = { s1: '上册', s2: '下册' } as const;
+
 export function SettingsPage() {
   const {
     state,
@@ -84,6 +89,8 @@ export function SettingsPage() {
     parentLogin,
     parentRegister,
     parentLogout,
+    switchGrade,
+    gradeSwitching,
   } = useApp();
   const [nickname, setNickname] = useState(state.profile.nickname);
   const [praiseDraft, setPraiseDraft] = useState('');
@@ -98,6 +105,40 @@ export function SettingsPage() {
   useEffect(() => {
     setNickname(state.profile.nickname);
   }, [state.profile.nickname]);
+
+  const currentGrade = state.grade ?? 2;
+  const currentSemester = state.semesterOverride ?? autoSemester();
+  const [pendingGrade, setPendingGrade] = useState<number | null>(null);
+  const [pendingSemester, setPendingSemester] = useState<'s1' | 's2'>('s1');
+  const [sameSemesterError, setSameSemesterError] = useState(false);
+
+  const openGradeSwitch = (grade: number) => {
+    if (grade === currentGrade) return;
+    const semester = autoSemester();
+    if (grade === currentGrade && semester === currentSemester) return;
+    setSameSemesterError(false);
+    setPendingGrade(grade);
+    setPendingSemester(semester);
+  };
+
+  const confirmGradeSwitch = async () => {
+    if (pendingGrade === null) return;
+    try {
+      await switchGrade(pendingGrade as Grade, pendingSemester);
+      setPendingGrade(null);
+    } catch {
+      setSameSemesterError(true);
+      notify('切换没有完成，请稍后再试。');
+    }
+  };
+
+  /** 同年级换册：直接切换（key 不同）。 */
+  const switchSemesterInPlace = (semester: 's1' | 's2') => {
+    if (semester === currentSemester) return;
+    setPendingSemester(semester);
+    setPendingGrade(currentGrade);
+    setSameSemesterError(false);
+  };
 
   const setTimetableCell = (dayIndex: number, periodIndex: number, value: string) => {
     const timetable: Timetable = state.timetable.map((row, rowIndex) =>
@@ -211,6 +252,47 @@ export function SettingsPage() {
       <PinGate>
         <div className="settings-grid">
           <div className="settings-main">
+            <section className="settings-card card">
+              <div className="section-title">
+                <h2>年级与教材</h2>
+                <span className="section-aside">{SUBJECTS[0]?.edition}</span>
+              </div>
+              <div className="settings-row">
+                <div>
+                  <b>当前年级</b>
+                  <span className="field-hint">切换后学习内容与教材随之变更，旧年级数据完整封存。</span>
+                </div>
+                <select
+                  className="form-select"
+                  value={currentGrade}
+                  aria-label="选择年级"
+                  onChange={(event) => openGradeSwitch(Number(event.target.value))}
+                >
+                  {GRADE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="settings-row">
+                <div>
+                  <b>学期</b>
+                  <span className="field-hint">默认按日期自动；也可手动换册（上/下册内容不同）。</span>
+                </div>
+                <select
+                  className="form-select"
+                  value={currentSemester}
+                  aria-label="选择学期"
+                  onChange={(event) => switchSemesterInPlace(event.target.value as 's1' | 's2')}
+                >
+                  <option value="s1">上册（自动/手动）</option>
+                  <option value="s2">下册</option>
+                </select>
+              </div>
+              <p className="settings-note">切换会先封存现在的进度，星星、桃粮和小桃都会带走；切回原年级进度自动接续。</p>
+            </section>
+
             <section className="settings-card card">
               <div className="section-title">
                 <h2>孩子怎么称呼</h2>
@@ -723,7 +805,29 @@ export function SettingsPage() {
             </section>
           </aside>
         </div>
-      </PinGate>
+        {pendingGrade !== null && (
+          <div className="modal-backdrop" role="presentation">
+            <div className="modal" role="dialog" aria-modal="true" aria-label="确认切换年级">
+              <h2>切换到{GRADE_OPTIONS.find((g) => g.value === pendingGrade)?.label} · {SEMESTER_LABEL[pendingSemester]}？</h2>
+              <p className="modal-lede">
+                学习内容与教材将切换到新年级；现在的进度、错题会完整封存，
+                星星、桃粮和小桃都会带走。切回原年级时进度自动接续。
+              </p>
+              {sameSemesterError && (
+                <p className="gentle-note warn" role="alert">切换没有完成，请稍后再试。</p>
+              )}
+              <div className="settings-actions">
+                <button type="button" className="btn btn-ghost" onClick={() => setPendingGrade(null)} disabled={gradeSwitching}>
+                  再想想
+                </button>
+                <button type="button" className="btn btn-primary" onClick={confirmGradeSwitch} disabled={gradeSwitching}>
+                  {gradeSwitching ? '切换中…' : '确认切换'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
 
       {pendingImport ? (
         <BackupImportDialog
@@ -733,6 +837,7 @@ export function SettingsPage() {
           onConfirm={confirmImport}
         />
       ) : null}
+      </PinGate>
     </div>
   );
 }

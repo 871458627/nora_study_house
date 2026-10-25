@@ -16,6 +16,82 @@ export interface AuthSession {
   accessToken: string;
 }
 
+export interface GradeSwitchResult {
+  ok: boolean;
+  state: Record<string, unknown>;
+  revision: number;
+  updatedAt: string;
+  archived: string | null;
+  restored: boolean;
+}
+
+/** 年级切换（docs/12 v1.1）：服务端封存旧年级并写回新年级标记。 */
+export async function switchGradeRequest(
+  grade: number,
+  semester: 's1' | 's2',
+  fromKey: string,
+): Promise<GradeSwitchResult> {
+  const token = accessToken;
+  if (!token) throw new AuthError('unauthorized', 401);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+  let res: Response;
+  try {
+    res = await fetch('/api/v1/grade/switch', {
+      method: 'POST',
+      credentials: 'same-origin',
+      signal: controller.signal,
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+      body: JSON.stringify({ grade, semester, fromKey }),
+    });
+  } catch {
+    throw new AuthError('offline', 0);
+  } finally {
+    clearTimeout(timer);
+  }
+  const payload = (await res.json().catch(() => null)) as
+    | (GradeSwitchResult & { error?: { code?: string } })
+    | null;
+  if (!res.ok || !payload?.ok) {
+    throw new AuthError(payload?.error?.code ?? 'sync_failed', res.status);
+  }
+  return payload;
+}
+
+export interface GradeArchiveEntry {
+  gradeKey: string;
+  summary: Record<string, unknown>;
+  createdAt: string;
+  snapshot: Record<string, unknown>;
+}
+
+/** 历史年级存档列表（只读视图 + 导出用）。 */
+export async function fetchGradeArchives(): Promise<GradeArchiveEntry[]> {
+  const token = accessToken;
+  if (!token) throw new AuthError('unauthorized', 401);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+  let res: Response;
+  try {
+    res = await fetch('/api/v1/grade-archives', {
+      credentials: 'same-origin',
+      signal: controller.signal,
+      headers: { authorization: `Bearer ${token}` },
+    });
+  } catch {
+    throw new AuthError('offline', 0);
+  } finally {
+    clearTimeout(timer);
+  }
+  const payload = (await res.json().catch(() => null)) as
+    | { ok?: boolean; archives?: GradeArchiveEntry[]; error?: { code?: string } }
+    | null;
+  if (!res.ok || !payload?.ok) {
+    throw new AuthError(payload?.error?.code ?? 'sync_failed', res.status);
+  }
+  return payload.archives ?? [];
+}
+
 export class AuthError extends Error {
   code: string;
   status: number;

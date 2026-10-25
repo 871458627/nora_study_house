@@ -6,6 +6,7 @@ import { AppError } from '../errors.js'
 import type {
   AccountRecord,
   CasUpdateResult,
+  GradeArchiveRecord,
   HistoryRecord,
   InsertFirstResult,
   RefreshTokenRecord,
@@ -137,6 +138,27 @@ export function createPrismaRepository(prisma: PrismaClient): Repository {
       async listByFamily(familyId: string, limit: number): Promise<SecurityEventRecord[]> {
         const rows = await prisma.securityEvent.findMany({ where: { familyId }, orderBy: { createdAt: 'desc' }, take: limit })
         return rows.map((row) => ({ ...row, detail: row.detail as Record<string, unknown> | null }))
+      },
+    },
+
+    gradeArchives: {
+      async upsert(input: { familyId: string; gradeKey: string; snapshot: Record<string, unknown>; summary: Record<string, unknown>; now: Date }): Promise<void> {
+        await prisma.gradeArchive.upsert({
+          where: { familyId_gradeKey: { familyId: input.familyId, gradeKey: input.gradeKey } },
+          create: { familyId: input.familyId, gradeKey: input.gradeKey, snapshot: toJson(input.snapshot), summary: toJson(input.summary), createdAt: input.now },
+          update: { snapshot: toJson(input.snapshot), summary: toJson(input.summary) },
+        })
+      },
+      async findByKey(familyId: string, gradeKey: string): Promise<GradeArchiveRecord | null> {
+        const row = await prisma.gradeArchive.findUnique({ where: { familyId_gradeKey: { familyId, gradeKey } } })
+        return row ? { ...row, snapshot: row.snapshot as Record<string, unknown>, summary: row.summary as Record<string, unknown> } : null
+      },
+      async delete(familyId: string, gradeKey: string): Promise<void> {
+        await prisma.gradeArchive.deleteMany({ where: { familyId, gradeKey } })
+      },
+      async listByFamily(familyId: string): Promise<GradeArchiveRecord[]> {
+        const rows = await prisma.gradeArchive.findMany({ where: { familyId }, orderBy: { createdAt: 'desc' } })
+        return rows.map((row) => ({ ...row, snapshot: row.snapshot as Record<string, unknown>, summary: row.summary as Record<string, unknown> }))
       },
     },
   }

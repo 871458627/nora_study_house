@@ -9,6 +9,8 @@ export interface DeviceState {
   revision: number;
   dirty: boolean;
   lastSyncedAt?: string;
+  /** 浏览模式（docs/06 §3.10）：家长未登录时只许查看，学习动作由 LearnGate 锁死。 */
+  visitor: boolean;
 }
 
 export function emptyDevice(): DeviceState {
@@ -19,6 +21,7 @@ export function emptyDevice(): DeviceState {
     failures: { count: 0 },
     revision: 0,
     dirty: false,
+    visitor: false,
   };
 }
 
@@ -49,6 +52,7 @@ export function loadDevice(): DeviceState | null {
       },
       revision: Math.max(0, Number(parsed.revision) || 0),
       dirty: parsed.dirty === true,
+      visitor: parsed.visitor === true,
     };
   } catch {
     return null;
@@ -71,6 +75,7 @@ export function withoutDevicePin(device: DeviceState): DeviceState {
     pinHash: '',
     pinSalt: '',
     failures: { count: 0 },
+    visitor: false,
   };
 }
 

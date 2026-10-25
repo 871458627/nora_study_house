@@ -12,6 +12,9 @@ import {
 import { todayKey } from '../core/date';
 import {
   createInitialState,
+  normalizeState,
+  type Grade,
+  type Semester,
   type SyncState,
 } from '../core/model';
 import {
@@ -23,6 +26,14 @@ import {
   type PinFailures,
 } from '../core/pin';
 import { prepareState, appReducer, type AppAction } from '../core/state';
+import {
+  currentGradeKeyOf,
+  gradeKeyOf,
+  hasPack,
+  setPack,
+  type GradeKey,
+} from '../data/content';
+import { switchGradeRequest } from './auth';
 import {
   downloadBackup,
   emptyDevice,
@@ -117,6 +128,13 @@ interface AppContextValue {
   bindLogin: (input: AuthFormsInput) => Promise<BindOutcome>;
   bindRegister: (input: AuthFormsInput) => Promise<BindOutcome>;
   bindPull: () => Promise<BindOutcome>;
+  /** 产品规则（docs/06 §3.10）：家长未登录 = 只可浏览，学习动作锁死。 */
+  canLearn: boolean;
+  enterVisitor: () => void;
+  exitVisitor: () => void;
+  /** 年级切换（docs/12 v1.1）：服务端封存/恢复，返回后换内容包并重生成计划。 */
+  switchGrade: (grade: Grade, semester: Semester) => Promise<void>;
+  gradeSwitching: boolean;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -193,6 +211,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         revision: remote.revision,
         dirty: false,
         lastSyncedAt: remote.updatedAt ?? new Date().toISOString(),
+        visitor: false,
       });
       setSyncStatus('synced');
       setSyncError(null);
@@ -354,6 +373,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [adoptRemote, noteSyncFailure, runWithAuthRetry]);
 
+  // 内容包与 state.grade/semester 保持一致（必须在 bootstrap 之前声明，保证首帧 prepareState 用对包）。
+  const gradeKey: GradeKey = currentGradeKeyOf(state.grade ?? 2, state.semesterOverride);
+  useEffect(() => {
+    setPack(gradeKey);
+  }, [gradeKey]);
+
   useEffect(() => {
     if (bootedRef.current) return;
     bootedRef.current = true;
@@ -492,8 +517,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const onboard = useCallback(async ({ nickname, dailyMinutes, pin }: OnboardInput) => {
     await configurePin(pin);
+    updateDevice({ visitor: false });
     dispatchLocal({ type: 'onboard', nickname, dailyMinutes, date: todayKey() });
-  }, [configurePin, dispatchLocal]);
+  }, [configurePin, dispatchLocal, updateDevice]);
 
   const verifyDevicePin = useCallback(
     async (pin: string): Promise<PinResult> => {
@@ -601,6 +627,53 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  /**
+   * 浏览模式（docs/06 §3.10）：家长未登录时只许查看系统功能，学习动作由
+   * LearnGate 锁死。标记在设备态持久化；绑定接上云端或完成引导时自动清除，
+   * 「去登录」入口走 exitVisitor 回到引导第一屏。
+   */
+  const enterVisitor = useCallback(() => {
+    updateDevice({ visitor: true });
+  }, [updateDevice]);
+
+  const exitVisitor = useCallback(() => {
+    updateDevice({ visitor: false });
+  }, [updateDevice]);
+
+  const [gradeSwitching, setGradeSwitching] = useState(false);
+
+  /**
+   * 切换年级：服务端封存旧年级切片并恢复/新建目标年级 → 客户端换内容包 →
+   * 采纳服务端 state（revision 由服务端推进）→ 重生成当日计划。
+   * 语义（docs/12 §2.2）：切回曾用过的年级自动恢复存档，数据不丢。
+   */
+  const switchGrade = useCallback(
+    async (grade: Grade, semester: Semester) => {
+      if (gradeSwitching) return;
+      const fromKey = currentGradeKeyOf(stateRef.current.grade ?? 2, stateRef.current.semesterOverride);
+      const toKey = gradeKeyOf(grade, semester);
+      if (toKey === fromKey) return;
+      if (!hasPack(toKey)) return;
+      setGradeSwitching(true);
+      try {
+        const result = await switchGradeRequest(grade, semester, fromKey);
+        const next = normalizeState(result.state);
+        if (!next) throw new Error('invalid state from grade switch');
+        setPack(toKey);
+        stateRef.current = next;
+        dispatch({ type: 'replace', state: next });
+        saveCachedState(next);
+        updateDevice({ revision: result.revision, dirty: false, lastSyncedAt: result.updatedAt });
+        setSyncStatus('synced');
+        setSyncError(null);
+        notify(result.restored ? '已切回，进度接续如初。' : '新教材准备好了！');
+      } finally {
+        setGradeSwitching(false);
+      }
+    },
+    [gradeSwitching, notify, updateDevice],
+  );
+
   const parentLogin = useCallback(
     async ({ username, password }: AuthFormsInput) => {
       await loginRequest(username, password);
@@ -681,6 +754,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       bindLogin,
       bindRegister,
       bindPull,
+      // 学习解锁必须同时满足「已登录」和「本机已初始化」：拉取失败的设备虽已
+      // 拿到 token，但还不知道云端家庭状态，放行学习会绕过绑定制造冲突。
+      canLearn: parentAccount !== null && state.onboarded,
+      enterVisitor,
+      exitVisitor,
+      switchGrade,
+      gradeSwitching,
     }),
     [
       state,
@@ -712,6 +792,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       bindLogin,
       bindRegister,
       bindPull,
+      enterVisitor,
+      exitVisitor,
+      switchGrade,
+      gradeSwitching,
     ],
   );
 

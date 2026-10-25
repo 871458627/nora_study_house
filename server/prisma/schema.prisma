@@ -18,6 +18,7 @@ model Family {
   state        FamilyState?
   history      FamilyStateHistory[]
   securityLogs SecurityEvent[]
+  gradeArchives GradeArchive[]
 
   @@map("families")
 }
@@ -82,4 +83,16 @@ model SecurityEvent {
 
   @@index([familyId, createdAt(sort: Desc)])
   @@map("security_events")
+}
+
+model GradeArchive {
+  familyId  String   @map("family_id")
+  family    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  gradeKey  String   @map("grade_key") // "g2s1"：年级+学期，同族唯一
+  snapshot  Json // lessons/pointers/mistakes/weakness/dictationQueue 快照
+  summary   Json // 摘要（课数/错题数等），列表页免解 snapshot
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([familyId, gradeKey])
+  @@map("grade_archives")
 }

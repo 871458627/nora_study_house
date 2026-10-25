@@ -3,6 +3,7 @@ import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { useApp } from './AppProvider';
 import { ConflictDialog, PendingConflictBanner } from './ConflictDialog';
 import { LoginBanner } from './LoginBanner';
+import { LearnGate } from './LearnGate';
 import { Mascot } from '../components/Mascot';
 import { Icon } from '../components/Icon';
 import { SyncBadge, Toast } from '../components/ui';
@@ -113,7 +114,9 @@ export function App() {
 
   const needsOnboarding = !state.onboarded || !device.pinHash;
 
-  if (needsOnboarding) {
+  // 浏览模式（docs/06 §3.10）：未登录选了「先逛逛」时放行进入应用，
+  // 学习类路由由 LearnGate 逐条锁死。
+  if (needsOnboarding && !device.visitor) {
     return (
       <div className="app-root onboarding-root">
         <OnboardingPage />
@@ -133,12 +136,12 @@ export function App() {
           <Route path="/" element={<TodayPage />} />
           <Route path="/textbook" element={<TextbookPage />} />
           <Route path="/textbook/:subject/:lessonId" element={<LessonPage />} />
-          <Route path="/task/:taskId" element={<TaskPage mode="task" />} />
-          <Route path="/lesson/:lessonId/practice" element={<TaskPage mode="practice" />} />
-          <Route path="/lesson/:lessonId/dictation" element={<TaskPage mode="dictation" />} />
-          <Route path="/lesson/:lessonId/words" element={<TaskPage mode="words" />} />
-          <Route path="/mistake/:questionId" element={<MistakeRetryPage />} />
-          <Route path="/dictation/review" element={<DictationReviewPage />} />
+          <Route path="/task/:taskId" element={<LearnGate><TaskPage mode="task" /></LearnGate>} />
+          <Route path="/lesson/:lessonId/practice" element={<LearnGate><TaskPage mode="practice" /></LearnGate>} />
+          <Route path="/lesson/:lessonId/dictation" element={<LearnGate><TaskPage mode="dictation" /></LearnGate>} />
+          <Route path="/lesson/:lessonId/words" element={<LearnGate><TaskPage mode="words" /></LearnGate>} />
+          <Route path="/mistake/:questionId" element={<LearnGate><MistakeRetryPage /></LearnGate>} />
+          <Route path="/dictation/review" element={<LearnGate><DictationReviewPage /></LearnGate>} />
           <Route path="/pet" element={<PetPage />} />
           <Route path="/shop" element={<ShopPage />} />
           <Route path="/badges" element={<BadgesPage />} />

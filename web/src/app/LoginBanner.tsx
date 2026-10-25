@@ -23,7 +23,7 @@ export function LoginBanner() {
       <span className="pending-conflict-icon">
         <Icon name="alert" size={15} />
       </span>
-      <span>需要家长登录后才能同步，这台设备上的记录可以照常使用。</span>
+      <span>家长未登录：可以先随便看看，学习要等家长登录后继续。</span>
       <button type="button" className="text-link banner-cta" onClick={() => navigate('/settings')}>
         去登录
       </button>

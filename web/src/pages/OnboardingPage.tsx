@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AuthError } from '../app/auth';
 import { useApp } from '../app/AppProvider';
 import { Mascot } from '../components/Mascot';
@@ -19,7 +20,7 @@ const TOTAL_STEPS = 4;
 const BIND_TICKS = [
   '进度自动同步，换设备可以接着用',
   'PIN 只保存在本机，不参与云端账号',
-  '没空登录？先离线用，进度不会丢',
+  '先随便逛逛可以，学习要等家长登录',
 ];
 
 const PROFILE_TICKS = [
@@ -50,8 +51,17 @@ function bindAuthErrorText(error: unknown): string {
 }
 
 export function OnboardingPage() {
-  const { state, bindLogin, bindRegister, bindPull, configurePin, unlockParentSession, onboard } =
-    useApp();
+  const {
+    state,
+    bindLogin,
+    bindRegister,
+    bindPull,
+    configurePin,
+    unlockParentSession,
+    onboard,
+    enterVisitor,
+  } = useApp();
+  const navigate = useNavigate();
   const [phase, setPhase] = useState<'bind' | 'profile'>('bind');
   const [step, setStep] = useState(0);
   const [nickname, setNickname] = useState(
@@ -105,9 +115,10 @@ export function OnboardingPage() {
     );
   }
 
-  const startProfile = () => {
-    setPhase('profile');
-    setStep(0);
+  /** 浏览模式兜底（docs/06 §3.10）：不登录也能看，学习动作由 LearnGate 锁死。 */
+  const startVisitor = () => {
+    enterVisitor();
+    navigate('/');
   };
 
   const submitBind = async () => {
@@ -148,7 +159,7 @@ export function OnboardingPage() {
       setPullFailed(false);
       setPhase('profile');
     } catch {
-      setBindError('还是没有取回来，请稍后再试，或先离线使用。');
+      setBindError('还是没有取回来，请稍后再试，或先随便逛逛。');
     } finally {
       setBusy(false);
     }
@@ -284,8 +295,8 @@ export function OnboardingPage() {
             >
               {busy ? '正在连接…' : authMode === 'login' ? '登录并接上进度' : '注册并开始'}
             </button>
-            <button className="btn btn-ghost full" type="button" disabled={busy} onClick={startProfile}>
-              暂不登录，先离线使用
+            <button className="btn btn-ghost full" type="button" disabled={busy} onClick={startVisitor}>
+              暂不登录，先逛逛
             </button>
           </div>
         )}
@@ -300,7 +311,7 @@ export function OnboardingPage() {
               </p>
             ) : null}
             <p className="field-hint">
-              网络暂时不稳定。可以再试一次，也可以先离线使用，家长稍后在设置里同步。
+              网络暂时不稳定。可以再试一次，也可以先随便逛逛，家长稍后在设置里登录。
             </p>
             <button
               className="btn btn-primary full"
@@ -310,8 +321,8 @@ export function OnboardingPage() {
             >
               {busy ? '正在取回…' : '重试取回进度'}
             </button>
-            <button className="btn btn-ghost full" type="button" disabled={busy} onClick={startProfile}>
-              暂不登录，先离线使用
+            <button className="btn btn-ghost full" type="button" disabled={busy} onClick={startVisitor}>
+              暂不登录，先逛逛
             </button>
           </div>
         )}

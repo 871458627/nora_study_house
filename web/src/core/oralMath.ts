@@ -2,7 +2,7 @@ import { lessonById } from '../data/content';
 import type { Question } from '../data/types';
 import { seededRandom } from './grading';
 
-export type OralStage = 'add-sub' | 'multiply' | 'mixed';
+export type OralStage = 'add-sub' | 'multiply' | 'mixed' | 'divide' | 'mixed-div';
 
 function numeric(stem: string, answer: number, id: string): Question {
   return {
@@ -28,6 +28,8 @@ export function oralStageForLesson(lessonId: string | undefined): OralStage {
 }
 
 export function oralSubtitle(stage: OralStage): string {
+  if (stage === 'mixed-div') return '5 道题 · 表内除法、乘法与 100 以内加减';
+  if (stage === 'divide') return '5 道题 · 表内除法';
   if (stage === 'mixed') return '5 道题 · 表内乘法、乘加与 100 以内加减';
   if (stage === 'multiply') return '5 道题 · 表内乘法与 100 以内加减';
   return '5 道题 · 100 以内加减';
@@ -42,7 +44,15 @@ export function generateOralQuestions(seed: string, count = 5, stage: OralStage 
   const questions: Question[] = [];
   const used = new Set<string>();
   const modes =
-    stage === 'add-sub' ? [2, 3] : stage === 'multiply' ? [0, 2, 3] : [0, 2, 3, 4];
+    stage === 'add-sub'
+      ? [2, 3]
+      : stage === 'multiply'
+        ? [0, 2, 3]
+        : stage === 'mixed'
+          ? [0, 2, 3, 4]
+          : stage === 'divide'
+            ? [5]
+            : [5, 0, 2, 3];
 
   for (let index = 0; index < count; index += 1) {
     let attempt = 0;
@@ -57,6 +67,17 @@ export function generateOralQuestions(seed: string, count = 5, stage: OralStage 
         const b = 2 + Math.floor(random() * 8);
         stem = `${a} × ${b} = ?`;
         answer = a * b;
+      } else if (mode === 5) {
+        // 表内除法：由乘积反推商（被除数 = 积，除数与商为乘数），确保整除。
+        const a = 2 + Math.floor(random() * 8);
+        const b = 2 + Math.floor(random() * 8);
+        const product = a * b;
+        const dividend = a > b ? product : product; // 展示 积 ÷ 小乘数 = 大乘数
+        const divisor = Math.min(a, b);
+        const quotient = Math.max(a, b);
+        stem = `${dividend} ÷ ${divisor} = ?`;
+        answer = quotient;
+        void dividend;
       } else if (mode === 2) {
         const a = 12 + Math.floor(random() * 68);
         const b = 2 + Math.floor(random() * Math.min(40, 100 - a - 1));

@@ -33,6 +33,14 @@ export interface HistoryRecord {
   updatedAt: Date
 }
 
+export interface GradeArchiveRecord {
+  familyId: string
+  gradeKey: string
+  snapshot: Record<string, unknown>
+  summary: Record<string, unknown>
+  createdAt: Date
+}
+
 export interface SecurityEventRecord {
   id: string
   familyId: string
@@ -81,5 +89,12 @@ export interface Repository {
   securityEvents: {
     create(input: { familyId: string; type: string; detail: Record<string, unknown> | null; now: Date }): Promise<SecurityEventRecord>
     listByFamily(familyId: string, limit: number): Promise<SecurityEventRecord[]>
+  }
+  /** 年级切换归档（docs/12 v1.1）：同 (familyId, gradeKey) 只存一行，封存即覆写。 */
+  gradeArchives: {
+    upsert(input: { familyId: string; gradeKey: string; snapshot: Record<string, unknown>; summary: Record<string, unknown>; now: Date }): Promise<void>
+    findByKey(familyId: string, gradeKey: string): Promise<GradeArchiveRecord | null>
+    delete(familyId: string, gradeKey: string): Promise<void>
+    listByFamily(familyId: string): Promise<GradeArchiveRecord[]>
   }
 }
