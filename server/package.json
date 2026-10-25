@@ -1,0 +1,36 @@
+{
+  "name": "xiaotao-server",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "description": "小桃学习屋 v2 自托管后端 API：账号鉴权（argon2id + JWT + refresh 轮换）与家庭状态 CAS 同步",
+  "main": "dist/src/app.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx watch src/app.ts",
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc --noEmit",
+    "test": "vitest run",
+    "prisma:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^9.4.0",
+    "@fastify/jwt": "^8.0.1",
+    "@fastify/rate-limit": "^9.1.0",
+    "@prisma/client": "^6.7.0",
+    "argon2": "^0.41.1",
+    "fastify": "^4.28.1",
+    "pino": "^9.5.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "prisma": "^6.7.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
+  }
+}

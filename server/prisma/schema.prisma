@@ -1,0 +1,85 @@
+// 小桃学习屋 v2 六表 schema（docs/02 §4.1）。
+// 注意：family_state_history 环形槽位交付口径为 N=5（slot = revision % 5，
+// 常量见 src/services/stateService.ts 的 HISTORY_SLOTS；docs/02 §4.1 的 10 槽为建议值）。
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Family {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  accounts     Account[]
+  state        FamilyState?
+  history      FamilyStateHistory[]
+  securityLogs SecurityEvent[]
+
+  @@map("families")
+}
+
+model Account {
+  id            String   @id @default(cuid())
+  username      String   @unique @db.VarChar(32) // 已小写化；字符集 [a-z0-9_-]
+  passwordHash  String   @map("password_hash") // argon2id，永不外发
+  familyId      String   @map("family_id")
+  family        Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now()) @map("created_at")
+  refreshTokens RefreshToken[]
+
+  @@index([familyId])
+  @@map("accounts")
+}
+
+model FamilyState {
+  familyId  String   @id @map("family_id") // 每家庭一行：文档式单行 CAS
+  family    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  data      Json // SyncState 原文；DB 层不做 JSON Schema 约束（服务端只校验信封）
+  revision  Int      @default(1)
+  updatedAt DateTime @map("updated_at")
+
+  @@map("family_state")
+}
+
+model FamilyStateHistory {
+  familyId  String   @map("family_id")
+  family    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  slot      Int // 0..4 环形槽位 = revision % 5
+  data      Json
+  revision  Int
+  updatedAt DateTime @map("updated_at")
+
+  @@id([familyId, slot])
+  @@index([familyId, revision])
+  @@map("family_state_history")
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  accountId String    @map("account_id")
+  account   Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique @map("token_hash") // SHA-256(原始 token)；原始值不入库
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at") // 轮换/登出/泄漏吊销标记
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([accountId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model SecurityEvent {
+  id        String   @id @default(cuid())
+  familyId  String   @map("family_id")
+  family    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  type      String   @db.VarChar(32) // 白名单：pin-reset / content-migrated / refresh-reuse / …
+  detail    Json? // 事件元数据；绝不存明文密钥/哈希
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([familyId, createdAt(sort: Desc)])
+  @@map("security_events")
+}
