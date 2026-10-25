@@ -331,16 +331,6 @@ export function DictationSession({
           <button
             type="button"
             role="tab"
-            aria-selected={dictationMode === 'type'}
-            className={dictationMode === 'type' ? 'seg active' : 'seg'}
-            disabled={revealed}
-            onClick={() => switchMode('type')}
-          >
-            拼音打字
-          </button>
-          <button
-            type="button"
-            role="tab"
             aria-selected={dictationMode === 'handwrite'}
             className={dictationMode === 'handwrite' ? 'seg active' : 'seg'}
             disabled={revealed}

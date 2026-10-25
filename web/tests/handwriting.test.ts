@@ -86,18 +86,20 @@ describe('田字格手写 · 闭集识别纯函数', () => {
 });
 
 describe('听写方式设置 · handwrite 枚举贯通', () => {
-  it('normalizeState 保留 handwrite，未知值回落 choice', () => {
+  it('normalizeState 保留 handwrite，隐藏的 type 与未知值回落 choice', () => {
     const keep = normalizeState({
       schemaVersion: 1,
       profile: { nickname: '小桃' },
       settings: { dictationMode: 'handwrite' },
     } as never)!;
     expect(keep.settings.dictationMode).toBe('handwrite');
-    const fallback = normalizeState({
-      schemaVersion: 1,
-      profile: { nickname: '小桃' },
-      settings: { dictationMode: 'weird' },
-    } as never)!;
-    expect(fallback.settings.dictationMode).toBe('choice');
+    for (const stale of ['type', 'weird']) {
+      const fallback = normalizeState({
+        schemaVersion: 1,
+        profile: { nickname: '小桃' },
+        settings: { dictationMode: stale },
+      } as never)!;
+      expect(fallback.settings.dictationMode, `存量 ${stale} 应回落 choice`).toBe('choice');
+    }
   });
 });

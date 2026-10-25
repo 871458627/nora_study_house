@@ -84,7 +84,7 @@ export function makeDictationTask(state: SyncState, date: string, lesson: Lesson
     subject: 'chinese',
     lessonId: lesson.id,
     title: `第 ${lesson.order} 课 · 生字听写`,
-    subtitle: `${words.length} 个词语 · ${state.settings.dictationMode === 'type' ? '听音写字' : '听音选字'}`,
+    subtitle: `${words.length} 个词语 · ${state.settings.dictationMode === 'handwrite' ? '田字格写' : '听音选字'}`,
     minutes: TASK_MINUTES.dictation,
     wordIds: words.map(word => word.id),
   };
