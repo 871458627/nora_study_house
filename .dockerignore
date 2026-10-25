@@ -1,0 +1,15 @@
+**/*.pyc
+.git
+.github
+docs
+mockups
+screenshots
+deploy/backups
+deploy/certbot
+node_modules
+web/node_modules
+web/dist
+server/node_modules
+server/dist
+*.log
+offline-state.json

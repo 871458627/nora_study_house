@@ -9,3 +9,8 @@ offline-state.json
 .DS_Store
 *.log
 test-reports/
+deploy/.env
+deploy/backup.key
+deploy/backups/
+deploy/certbot/
+deploy/nginx/conf.d/

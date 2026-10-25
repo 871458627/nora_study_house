@@ -1,0 +1,61 @@
+# 最终形态 nginx 配置：由 init-https.sh 在取得证书后复制到 nginx/conf.d/app.conf
+# ${DOMAIN} 由脚本 sed 替换（避免依赖 nginx 镜像的 envsubst 模板机制）。
+
+server {
+    listen 80;
+    server_name ${DOMAIN};
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name ${DOMAIN};
+
+    ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+
+    # 数据安全：传输层与基础防护头
+    add_header Strict-Transport-Security 'max-age=15552000' always;
+    add_header X-Content-Type-Options 'nosniff' always;
+    add_header X-Frame-Options 'DENY' always;
+    add_header Referrer-Policy 'strict-origin-when-cross-origin' always;
+    add_header Permissions-Policy 'camera=(), microphone=(), geolocation=()' always;
+
+    # 状态 PUT 上限 256KB，边缘放 512K 余量（超限直接 413，不进内网）
+    client_max_body_size 512k;
+
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript image/svg+xml;
+    gzip_min_length 1024;
+
+    location /api/ {
+        proxy_pass http://api:8787;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 30s;
+    }
+
+    # 静态与 SPA 由 api 同源托管（缓存策略在应用层，见 server/src/app.ts setHeaders）
+    location / {
+        proxy_pass http://api:8787;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 30s;
+    }
+}
