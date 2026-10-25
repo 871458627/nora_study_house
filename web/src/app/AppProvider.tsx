@@ -796,7 +796,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       bindPull,
       // 学习解锁必须同时满足「已登录」和「本机已初始化」：拉取失败的设备虽已
       // 拿到 token，但还不知道云端家庭状态，放行学习会绕过绑定制造冲突。
-      canLearn: parentAccount !== null && state.onboarded,
+      // 学习照常（docs/12 v1.2 口径）：账号登录只影响云同步与多设备，不阻断学习。
+      canLearn: state.onboarded,
       enterVisitor,
       exitVisitor,
       switchGrade,
