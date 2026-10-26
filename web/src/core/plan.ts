@@ -1,4 +1,4 @@
-import { dictationWordById, lessonAt, lessonsForSubject, lessonById, oralStageForCurrentPack } from '../data/content';
+import { dictationWordById, lessonAt, lessonsForSubject, lessonById, lessonLabel, oralStageForCurrentPack } from '../data/content';
 import type { DictationWord, Lesson, PlanTask, Question, SubjectId } from '../data/types';
 import { addDays, diffDays, weekdayIndex } from './date';
 import { currentLessonIndex, type SyncState } from './model';
@@ -55,7 +55,7 @@ export function makeReviewTask(date: string, lesson: Lesson, kind: 'review' | 'p
     kind,
     subject: lesson.subject,
     lessonId: lesson.id,
-    title: `第 ${lesson.order} 课 · ${lesson.title}`,
+    title: `${lessonLabel(lesson)} · ${lesson.title}`,
     subtitle: `${label} · ${subtitle}`,
     minutes: TASK_MINUTES[kind],
   };
@@ -83,7 +83,7 @@ export function makeDictationTask(state: SyncState, date: string, lesson: Lesson
     kind: 'dictation',
     subject: 'chinese',
     lessonId: lesson.id,
-    title: `第 ${lesson.order} 课 · 生字听写`,
+    title: `${lessonLabel(lesson)} · 生字听写`,
     subtitle: `${words.length} 个词语 · ${state.settings.dictationMode === 'handwrite' ? '田字格写' : '听音选字'}`,
     minutes: TASK_MINUTES.dictation,
     wordIds: words.map(word => word.id),
@@ -97,7 +97,7 @@ function makeWordsTask(date: string, lesson: Lesson): PlanTask | null {
     kind: 'words',
     subject: 'english',
     lessonId: lesson.id,
-    title: `第 ${lesson.order} 课 · 单词卡`,
+    title: `${lessonLabel(lesson)} · 单词卡`,
     subtitle: `${lesson.words.length} 个单词 · 点读 · 选义 · 句子排序`,
     minutes: TASK_MINUTES.words,
   };

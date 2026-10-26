@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useApp } from '../app/AppProvider';
 import { Icon } from './Icon';
-import { SUBJECT_BY_ID, lessonsForSubject } from '../data/content';
+import { SUBJECT_BY_ID, lessonsForSubject, lessonLabel } from '../data/content';
 import type { SubjectId } from '../data/types';
 
 export function CurrentLessonPicker({
@@ -27,7 +27,7 @@ export function CurrentLessonPicker({
   const save = () => {
     if (!selected || !changed) return;
     dispatchLocal({ type: 'set-pointer', subject, index });
-    notify(`${meta.name}当前课已设为第 ${selected.order} 课，明天从新位置生成计划。`);
+    notify(`${meta.name}当前课已设为${lessonLabel(selected)}，明天从新位置生成计划。`);
   };
 
   return (
@@ -35,7 +35,7 @@ export function CurrentLessonPicker({
       <div className="current-lesson-copy">
         <span>{compact ? `${meta.name} · 课本位置` : `${meta.name}现在学到`}</span>
         <b>
-          第 {selected?.order} 课 · {selected?.title}
+          {selected ? lessonLabel(selected) : ''} · {selected?.title}
         </b>
         <small>已完成的记录不会清除；今天的计划不变，明天从新位置继续。</small>
       </div>
@@ -48,7 +48,7 @@ export function CurrentLessonPicker({
           >
             {lessons.map((lesson, lessonIndex) => (
               <option key={lesson.id} value={lessonIndex}>
-                第 {lesson.order} 课 · {lesson.title}
+                {lessonLabel(lesson)} · {lesson.title}
               </option>
             ))}
           </select>

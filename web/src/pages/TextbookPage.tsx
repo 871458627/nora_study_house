@@ -10,6 +10,7 @@ import {
   lessonsForSubject,
   lessonsInUnit,
   unitsFor,
+  lessonLabel,
 } from '../data/content';
 import { lessonPointerFor } from '../core/plan';
 import { LESSON_STATUS_LABEL } from '../data/labels';
@@ -74,7 +75,7 @@ export function TextbookPage() {
             <SubjectChip subject={subject} />
             <span>{meta.edition}</span>
           </div>
-          <h2>{pointer ? `当前 · 第 ${pointer.order} 课` : '这一科已经学完啦'}</h2>
+          <h2>{pointer ? `当前 · ${lessonLabel(pointer)}` : '这一科已经学完啦'}</h2>
           <p>{pointer ? pointer.title : '可以回头自由复习任何一课。'}</p>
           <div className="textbook-progress">
             <div>
@@ -138,7 +139,7 @@ export function TextbookPage() {
                     const isCurrent = lesson.id === pointer?.id;
                     return (
                       <Link key={lesson.id} to={`/textbook/${subject}/${lesson.id}`} className="lesson-row">
-                        <span className="lesson-number">{lesson.order}</span>
+                        <span className="lesson-number">{lesson.category === 'recognition' ? `识${lesson.textbookNo}` : lesson.textbookNo ?? lesson.order}</span>
                         <span className="lesson-copy">
                           <b>{lesson.title}</b>
                           <small>

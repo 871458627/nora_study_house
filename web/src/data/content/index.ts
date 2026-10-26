@@ -164,6 +164,12 @@ export function unitsFor(subject: SubjectId): Unit[] {
   return UNITS.filter(unit => unit.subject === subject);
 }
 
+/** 课本编号显示：识字独立编号（识字 1-4），课文连续编号（第 1-24 课）。 */
+export function lessonLabel(lesson: { category?: 'text' | 'recognition'; textbookNo?: number; order: number }): string {
+  if (lesson.category === 'recognition') return `识字 ${lesson.textbookNo ?? ''}`.trim();
+  return `第 ${lesson.textbookNo ?? lesson.order} 课`;
+}
+
 export function lessonsForSubject(subject: SubjectId): Lesson[] {
   return subjectLessonMap.get(subject) ?? [];
 }

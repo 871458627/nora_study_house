@@ -42,6 +42,10 @@ export interface Lesson {
   unitId: string;
   order: number;
   title: string;
+  /** 课本篇目类别：课文 / 识字（识字独立编号，2024 修订版口径） */
+  category?: 'text' | 'recognition';
+  /** 课本页面上显示的编号（课文 1-24、识字 1-4） */
+  textbookNo?: number;
   preview: { points: KnowledgePoint[] };
   review: { points: KnowledgePoint[]; mistakes: string[]; tip?: string };
   questions: Question[];

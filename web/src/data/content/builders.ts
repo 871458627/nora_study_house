@@ -74,6 +74,8 @@ export interface LessonSeed {
   dictation?: DictationWord[];
   afterClass?: QuestionSeed[];
   words?: EnglishWord[];
+  category?: 'text' | 'recognition';
+  textbookNo?: number;
 }
 
 export function buildQuestions(lessonId: string, kpIds: string[], seeds: QuestionSeed[]): Question[] {

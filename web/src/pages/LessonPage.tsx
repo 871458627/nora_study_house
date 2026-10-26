@@ -4,7 +4,7 @@ import { useApp } from '../app/AppProvider';
 import { Icon } from '../components/Icon';
 import { SubjectChip } from '../components/ui';
 import { useSpeech } from '../app/useSpeech';
-import { lessonById, unitById } from '../data/content';
+import { lessonById, unitById, lessonLabel } from '../data/content';
 import { LESSON_STATUS_LABEL, MASTERY_LABEL } from '../data/labels';
 import type { KnowledgePoint, Question } from '../data/types';
 import { lessonProgress } from '../core/model';
@@ -86,7 +86,7 @@ export function LessonPage() {
           </div>
           <h1>{lesson.title}</h1>
           <div className="lesson-subline">
-            <span>第 {lesson.order} 课</span>
+            <span>{lessonLabel(lesson)}</span>
             <span className={`status-pill ${progress.status}`}>{LESSON_STATUS_LABEL[progress.status]}</span>
             {progress.dueAt && progress.status !== 'mastered' && (
               <span className="due-note">下次复习 {formatMonthDay(progress.dueAt)}</span>

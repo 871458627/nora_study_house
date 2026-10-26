@@ -2,7 +2,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useApp } from '../app/AppProvider';
 import { EmptyState } from '../components/ui';
 import { Icon } from '../components/Icon';
-import { SUBJECT_BY_ID, lessonById } from '../data/content';
+import { SUBJECT_BY_ID, lessonById, lessonLabel } from '../data/content';
 import { TASK_KIND_LABEL } from '../data/labels';
 import type { PlanTask } from '../data/types';
 import type { TaskOutcome } from '../core/model';
@@ -119,7 +119,7 @@ export function TaskPage({ mode }: { mode: 'task' | 'practice' | 'dictation' | '
       <WordsSession
         lesson={lesson}
         words={lesson.words ?? []}
-        title={`第 ${lesson.order} 课 · 单词与短句`}
+        title={`${lessonLabel(lesson)} · 单词与短句`}
         meta={`英语 · 自由练习 · ${lesson.words?.length ?? 0} 个词`}
         backTo={backTo}
         backLabel={backLabel}
@@ -133,7 +133,7 @@ export function TaskPage({ mode }: { mode: 'task' | 'practice' | 'dictation' | '
     return (
       <DictationSession
         words={lesson.dictation ?? []}
-        title={`第 ${lesson.order} 课 · 生字听写`}
+        title={`${lessonLabel(lesson)} · 生字听写`}
         meta={`${SUBJECT_BY_ID[lesson.subject].name} · 自由听写`}
         backTo={backTo}
         backLabel={backLabel}
@@ -196,7 +196,7 @@ export function TaskPage({ mode }: { mode: 'task' | 'practice' | 'dictation' | '
 
   return (
     <PracticeSession
-      title={`第 ${lesson.order} 课 · ${lesson.title}`}
+      title={`${lessonLabel(lesson)} · ${lesson.title}`}
       meta={`${SUBJECT_BY_ID[lesson.subject].name} · 自由练习 · ${freeQuestions.length} 道题`}
       questions={freeQuestions}
       backTo={backTo}
