@@ -25,13 +25,18 @@ export function useLessonReader(script: ReadSegment[], onFail?: () => void) {
     setIndex(0);
   }, [stopSpeech]);
 
+  // 副作用只认「内容」不认「数组身份」：调用方若在渲染期重建 script 数组
+  // （未 memo），旧写法会在每次渲染——包括朗读自身 setState 引起的渲染——
+  // 重新触发本副作用，synth.cancel() 把刚启动的朗读立刻掐死（点击无声的根因）。
+  const scriptKey = script.map(segment => `${segment.lang}:${segment.text}`).join('\u0001');
+
   useEffect(() => {
-    // 脚本变化（换课）即停止并复位。
+    // 脚本内容变化（换课）即停止并复位。
     sessionRef.current += 1;
     stopSpeech();
     setState('idle');
     setIndex(0);
-  }, [script, stopSpeech]);
+  }, [scriptKey, stopSpeech]);
 
   const playFrom = useCallback(
     (startIndex: number, session: number) => {
