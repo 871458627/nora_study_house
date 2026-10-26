@@ -4,6 +4,8 @@ import { useApp } from '../app/AppProvider';
 import { Icon } from '../components/Icon';
 import { SubjectChip } from '../components/ui';
 import { useSpeech } from '../app/useSpeech';
+import { useLessonReader } from '../app/useLessonReader';
+import { buildLessonReadScript } from '../core/lessonReader';
 import { lessonById, unitById, lessonLabel } from '../data/content';
 import { LESSON_STATUS_LABEL, MASTERY_LABEL } from '../data/labels';
 import type { KnowledgePoint, Question } from '../data/types';
@@ -69,6 +71,8 @@ export function LessonPage() {
   const doneTask = todayTask ? state.dailyLogs[today]?.done.includes(todayTask.id) : false;
   const planTask = todayTask && !doneTask ? todayTask : undefined;
   const englishSpeech = lesson.words && supported && hasVoice('en-US');
+  const readScript = buildLessonReadScript(lesson);
+  const reader = useLessonReader(readScript);
 
   return (
     <div className="page lesson-page">
@@ -127,7 +131,38 @@ export function LessonPage() {
         </Link>
       )}
 
-      <div className="lesson-grid">
+            <section className="lesson-reader card" aria-label="课文朗读">
+        <button
+          type="button"
+          className={'lesson-reader-btn' + (reader.state === 'playing' ? ' speaking' : '')}
+          onClick={reader.toggle}
+          disabled={!reader.canRead}
+          aria-label={reader.state === 'playing' ? '停止朗读' : '朗读本课'}
+        >
+          <Icon name={reader.state === 'playing' ? 'close' : 'speaker'} size={20} />
+        </button>
+        <div className="lesson-reader-body">
+          <b>{reader.state === 'playing' ? '正在朗读…' : subject === 'english' ? '朗读本课单词和句子' : '朗读本课'}</b>
+          {reader.state === 'playing' && reader.current ? (
+            <p className="reader-current">{reader.current.text}</p>
+          ) : (
+            <p className="reader-hint">
+              {reader.canRead
+                ? subject === 'english'
+                  ? '朗读本课全部单词和例句，跟读一遍记得更牢。'
+                  : '朗读课名与知识卡内容，先听一遍再自己读。'
+                : '这台设备暂时不支持朗读，请家长读一遍。'}
+            </p>
+          )}
+          {reader.state === 'playing' && (
+            <span className="reader-progress" aria-live="polite">
+              第 {reader.index + 1} / {reader.total} 段
+            </span>
+          )}
+        </div>
+      </section>
+
+<div className="lesson-grid">
         <section className="knowledge-card card">
           <div className="section-title">
             <h2>预习卡</h2>
