@@ -36,7 +36,7 @@ function questionKind(question: Question): string {
 
 export function LessonPage() {
   const { lessonId } = useParams();
-  const { state } = useApp();
+  const { state, notify } = useApp();
   const lesson = lessonId ? lessonById(lessonId) : undefined;
   const { speak, supported, hasVoice } = useSpeech();
   const [speechFailed, setSpeechFailed] = useState(false);
@@ -72,7 +72,7 @@ export function LessonPage() {
   const planTask = todayTask && !doneTask ? todayTask : undefined;
   const englishSpeech = lesson.words && supported && hasVoice('en-US');
   const readScript = buildLessonReadScript(lesson);
-  const reader = useLessonReader(readScript);
+  const reader = useLessonReader(readScript, () => notify('这台设备暂时不能朗读，请家长读一遍。'));
 
   return (
     <div className="page lesson-page">

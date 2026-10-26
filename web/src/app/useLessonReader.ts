@@ -9,7 +9,7 @@ export type ReaderState = 'idle' | 'playing';
  * 按 ReadSegment 顺序逐段朗读，可停止；段间用 onEnd 链式衔接。
  * 脚本为空或设备不支持/无对应语音时返回 canRead=false，由页面降级。
  */
-export function useLessonReader(script: ReadSegment[]) {
+export function useLessonReader(script: ReadSegment[], onFail?: () => void) {
   const { speak, stop: stopSpeech, supported, hasVoice } = useSpeech();
   const [state, setState] = useState<ReaderState>('idle');
   const [index, setIndex] = useState(0);
@@ -52,6 +52,7 @@ export function useLessonReader(script: ReadSegment[]) {
         sessionRef.current += 1;
         setState('idle');
         setIndex(0);
+        onFail?.();
       }, () => {
         playFrom(startIndex + 1, session);
       });
@@ -59,9 +60,10 @@ export function useLessonReader(script: ReadSegment[]) {
         sessionRef.current += 1;
         setState('idle');
         setIndex(0);
+        onFail?.();
       }
     },
-    [speak],
+    [speak, onFail],
   );
 
   const toggle = useCallback(() => {
