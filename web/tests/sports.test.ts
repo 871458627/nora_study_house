@@ -13,6 +13,7 @@ import {
   sportsDayStatus,
   sportsMetCount,
 } from '../src/core/sports';
+import { addDays, daysInMonthOf, firstDayOfMonth, weekdayIndex } from '../src/core/date';
 
 const TODAY = '2026-10-25';
 const [rope, run, situp, reach] = SPORTS_ITEMS;
@@ -241,8 +242,27 @@ describe('appReducer 运动动作', () => {
   });
 });
 
-describe('normalizeState 运动数据兼容', () => {
-  it('旧数据没有 sports 字段 → 空结构', () => {
+describe('月历工具（docs/06 §3.11）', () => {
+  it('firstDayOfMonth 取所在月 1 号', () => {
+    expect(firstDayOfMonth('2026-10-26')).toBe('2026-10-01');
+    expect(firstDayOfMonth('2026-01-15')).toBe('2026-01-01');
+  });
+
+  it('daysInMonthOf 处理大小月与闰年', () => {
+    expect(daysInMonthOf('2026-10-26')).toBe(31);
+    expect(daysInMonthOf('2026-02-10')).toBe(28);
+    expect(daysInMonthOf('2028-02-10')).toBe(29);
+    expect(daysInMonthOf('2026-04-01')).toBe(30);
+  });
+
+  it('月历网格：2026 年 10 月 1 日为周四，翻月衔接正确', () => {
+    expect(weekdayIndex('2026-10-01')).toBe(3);
+    expect(firstDayOfMonth(addDays('2026-10-01', -1))).toBe('2026-09-01');
+    expect(addDays('2026-10-31', 1)).toBe('2026-11-01');
+  });
+});
+
+describe('normalizeState 运动数据兼容', () => {  it('旧数据没有 sports 字段 → 空结构', () => {
     const old: Record<string, unknown> = JSON.parse(JSON.stringify(createInitialState()));
     delete old.sports;
     const normalized = normalizeState(old);

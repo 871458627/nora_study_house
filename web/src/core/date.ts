@@ -28,6 +28,17 @@ export function addDays(key: string, days: number): string {
   return dateKeyUTC(date);
 }
 
+/** 该日期所在月的第一天（YYYY-MM-01）。 */
+export function firstDayOfMonth(key: string): string {
+  return `${key.slice(0, 7)}-01`;
+}
+
+/** 该日期所在月的天数（含闰年）。 */
+export function daysInMonthOf(key: string): number {
+  const [year, month] = key.split('-').map(Number);
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
 /** Whole days from `from` to `to` (to - from). */
 export function diffDays(to: string, from: string): number {
   const a = toUTC(to).getTime();

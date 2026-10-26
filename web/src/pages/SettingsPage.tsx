@@ -68,7 +68,7 @@ const GRADE_SWITCH_MASK_CSS = `
 .grade-switch-progress{display:flex;flex-direction:column;align-items:center;gap:9px;padding:0 30px;text-align:center;}
 .grade-switch-progress b{font-size:15px;}
 .grade-switch-progress span{font-size:12.5px;color:var(--sub);line-height:1.6;}
-.grade-switch-bar{width:100%;max-width:250px;height:8px;border-radius:999px;background:#f3e4dc;overflow:hidden;}
+.grade-switch-bar{width:100%;max-width:250px;height:8px;border-radius:999px;background:var(--fill);overflow:hidden;}
 .grade-switch-bar i{display:block;height:100%;width:42%;border-radius:999px;background:var(--brand);animation:grade-switch-slide 1.15s ease-in-out infinite;}
 @keyframes grade-switch-slide{from{transform:translateX(-105%)}to{transform:translateX(345%)}}
 `;

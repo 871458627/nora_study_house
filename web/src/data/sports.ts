@@ -11,8 +11,6 @@ export interface SportsItem {
   goal: number;
   /** 步进器每步增量（孩子友好） */
   step: number;
-  /** 主题色（内置项目固定；自定义项目由页面按序取兜底色） */
-  color?: string;
   builtin?: boolean;
 }
 
@@ -20,14 +18,12 @@ export interface SportsItem {
 export const SPORTS_DAILY_STAR_CAP = 3;
 /** 自定义项目数量上限 */
 export const SPORTS_MAX_CUSTOM_ITEMS = 5;
-/** 自定义项目兜底色（按顺序取） */
-export const SPORTS_FALLBACK_COLORS = ['#d9814e', '#8b6fc8', '#4fa3a5', '#b55fa0', '#47a8a0'];
 
 export const SPORTS_ITEMS: SportsItem[] = [
-  { id: 'rope', name: '跳绳', unit: '个', goal: 300, step: 10, color: '#ff6b8e', builtin: true },
-  { id: 'run', name: '跑步', unit: '分钟', goal: 15, step: 1, color: '#4e8fd9', builtin: true },
-  { id: 'situp', name: '仰卧起坐', unit: '个', goal: 40, step: 5, color: '#e0913d', builtin: true },
-  { id: 'reach', name: '坐位体前屈', unit: 'cm', goal: 10, step: 1, color: '#4fa3a5', builtin: true },
-  { id: 'jj', name: '开合跳', unit: '个', goal: 100, step: 10, color: '#8b6fc8', builtin: true },
-  { id: 'squat', name: '深蹲', unit: '个', goal: 30, step: 5, color: '#4f9e5f', builtin: true },
+  { id: 'rope', name: '跳绳', unit: '个', goal: 300, step: 10, builtin: true },
+  { id: 'run', name: '跑步', unit: '分钟', goal: 15, step: 1, builtin: true },
+  { id: 'situp', name: '仰卧起坐', unit: '个', goal: 40, step: 5, builtin: true },
+  { id: 'reach', name: '坐位体前屈', unit: 'cm', goal: 10, step: 1, builtin: true },
+  { id: 'jj', name: '开合跳', unit: '个', goal: 100, step: 10, builtin: true },
+  { id: 'squat', name: '深蹲', unit: '个', goal: 30, step: 5, builtin: true },
 ];

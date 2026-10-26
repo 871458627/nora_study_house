@@ -23,7 +23,7 @@ const WEEKDAY_SHORT = ['一', '二', '三', '四', '五', '六', '日'];
 const SPORTS_RECORDS_CSS = `
 .sports-week{display:flex;gap:6px;margin:10px 0 12px;}
 .sports-week i{flex:1;height:34px;border-radius:10px;background:var(--line-soft);display:flex;align-items:center;justify-content:center;font-style:normal;font-size:12px;color:var(--sub);}
-.sports-week i.on{background:var(--brand-soft);color:#c2496f;font-weight:500;}
+.sports-week i.on{background:var(--brand-soft);color:var(--accent);font-weight:500;}
 .sports-best{list-style:none;margin:0 0 10px;padding:0;display:flex;flex-wrap:wrap;gap:8px;}
 .sports-best li{background:var(--line-soft);border-radius:10px;padding:6px 12px;font-size:12.5px;display:flex;gap:8px;align-items:baseline;}
 .sports-best b{font-weight:500;}
@@ -308,7 +308,7 @@ export function RecordsPage() {
             </div>
           </section>
 
-          <section className="card">
+          <section className="card records-card">
               <div className="section-title">
                 <h2>历史年级</h2>
                 <span className="section-aside">{gradeArchiveList.length} 册已封存</span>
