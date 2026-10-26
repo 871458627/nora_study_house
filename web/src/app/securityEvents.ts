@@ -42,6 +42,15 @@ function writeOutbox(items: OutboxItem[]): void {
 }
 
 /** Sends queued events in order; stops and keeps the queue on first failure. */
+/** 换账号清本机：清空待上报队列（这些事件属于退出前的家庭，不能带到下一个账号）。 */
+export function clearOutbox(): void {
+  try {
+    localStorage.removeItem(OUTBOX_KEY);
+  } catch {
+    // 隐私模式等场景：本就没有队列
+  }
+}
+
 export async function flushSecurityEvents(): Promise<void> {
   const token = getAccessToken();
   if (!token) return;

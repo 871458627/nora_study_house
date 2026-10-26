@@ -124,6 +124,7 @@ export function SettingsPage() {
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
   const [authBusy, setAuthBusy] = useState(false);
+  const [logoutAsk, setLogoutAsk] = useState(false);
 
   useEffect(() => {
     setNickname(state.profile.nickname);
@@ -232,12 +233,17 @@ export function SettingsPage() {
     }
   };
 
-  const handleLogout = async () => {
+  const handleLogout = async (mode: 'keep' | 'wipe') => {
     setAuthBusy(true);
     try {
-      await parentLogout();
+      await parentLogout(mode);
       setAuthPassword('');
-      notify('已退出家长账号，本地记录保持不变。');
+      setLogoutAsk(false);
+      notify(
+        mode === 'wipe'
+          ? '已退出并清空本机数据，现在可以登录其他家长账号。'
+          : '已退出家长账号，本地记录保持不变。',
+      );
     } finally {
       setAuthBusy(false);
     }
@@ -647,15 +653,15 @@ export function SettingsPage() {
                     </div>
                   </div>
                   <p className="settings-note">
-                    登录后，这台设备的学习记录会与云端保持同步。退出登录不会删除本机数据，
-                    待同步的改动会等家长重新登录后再上传。
+                    登录后，这台设备的学习记录会与云端保持同步。退出时可以选择保留本机数据
+                    （同一家庭重新登录接上），或清空本机数据以便登录其他家长账号。
                   </p>
                   <div className="settings-actions">
                     <button
                       type="button"
                       className="btn btn-ghost"
                       disabled={authBusy}
-                      onClick={() => void handleLogout()}
+                      onClick={() => setLogoutAsk(true)}
                     >
                       退出登录
                     </button>
@@ -901,6 +907,58 @@ export function SettingsPage() {
           onConfirm={confirmImport}
         />
       ) : null}
+      {logoutAsk && (
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onClick={event => {
+            if (event.target === event.currentTarget && !authBusy) setLogoutAsk(false);
+          }}
+        >
+          <div className="modal logout-modal" role="dialog" aria-modal="true" aria-labelledby="logout-title">
+            <b id="logout-title" className="modal-heading">退出登录</b>
+            <p className="modal-lede">
+              这台设备的学习记录想怎么处理？两种方式都不会影响云端已有的进度。
+            </p>
+            {device.dirty && (
+              <p className="modal-warning">
+                这台设备还有没传完的改动。选「清空本机数据」会连它们一起删掉；
+                想保险的话，先在「云端同步」里点一次「立即同步」。
+              </p>
+            )}
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                disabled={authBusy}
+                onClick={() => setLogoutAsk(false)}
+              >
+                先不退出
+              </button>
+              <button
+                type="button"
+                className="btn btn-soft"
+                disabled={authBusy}
+                onClick={() => void handleLogout('keep')}
+              >
+                保留数据，仅退出
+              </button>
+              <button
+                type="button"
+                className="btn pin-reset"
+                disabled={authBusy}
+                onClick={() => void handleLogout('wipe')}
+              >
+                清空本机数据，换账号
+              </button>
+            </div>
+            <p className="pin-note">
+              「清空本机数据」用于把设备交给另一个家庭：学习记录、待传改动与本机 PIN
+              一起重置，回到初始引导。同一家庭的设备请选「保留数据」。
+            </p>
+          </div>
+        </div>
+      )}
       </PinGate>
     </div>
   );

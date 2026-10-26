@@ -46,6 +46,7 @@ import {
   recordSecurityEvent,
   withoutDevicePin,
   type DeviceState,
+  clearLocalData,
 } from '../core/storage';
 import {
   ConflictError,
@@ -68,7 +69,8 @@ import {
   AuthError,
   type AuthAccount,
 } from './auth';
-import { flushSecurityEvents, reportSecurityEvent } from './securityEvents';
+import { clearOutbox,
+  flushSecurityEvents, reportSecurityEvent } from './securityEvents';
 
 // v2: inject the in-memory access token accessor once at startup (docs/02 §5.1-3).
 configureSync({ getAccessToken });
@@ -125,7 +127,7 @@ interface AppContextValue {
   parentAccount: AuthAccount | null;
   parentLogin: (input: AuthFormsInput) => Promise<void>;
   parentRegister: (input: AuthFormsInput) => Promise<void>;
-  parentLogout: () => Promise<void>;
+  parentLogout: (mode?: 'keep' | 'wipe') => Promise<void>;
   bindLogin: (input: AuthFormsInput) => Promise<BindOutcome>;
   bindRegister: (input: AuthFormsInput) => Promise<BindOutcome>;
   bindPull: () => Promise<BindOutcome>;
@@ -733,15 +735,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   /**
-   * Local data and the dirty flag survive logout; the suspended push simply
-   * waits until the parent logs in again (docs/02 §5.2-2).
+   * 退出登录的两种模式（2026-10-25 换账号需求）：
+   * - keep（默认，docs/02 §5.2-2）：学习数据与 dirty 标记留在本机，挂起的
+   *   推送等家长重新登录后继续——仅适合同一家庭在同一设备重新登录；
+   * - wipe（换账号）：学习数据缓存、设备态（PIN + 同步簿记）、安全事件
+   *   队列全部清除，回到引导页由新的家长账号干净绑定。不做 wipe 的话，
+   *   下一账号登录时 bootstrap 会把本机（上一家庭的）数据推入其云端，
+   *   造成跨家庭数据串号。
    */
-  const parentLogout = useCallback(async () => {
+  const parentLogout = useCallback(async (mode: 'keep' | 'wipe' = 'keep') => {
     await logoutRequest();
     setParentAccount(null);
     loggedOutRef.current = true;
-    setSyncStatus('logged_out');
     setSyncError(null);
+    if (mode === 'wipe') {
+      clearOutbox();
+      clearLocalData();
+      const freshDevice = emptyDevice();
+      deviceRef.current = freshDevice;
+      setDevice(freshDevice);
+      const freshState = createInitialState();
+      stateRef.current = freshState;
+      dispatch({ type: 'replace', state: freshState });
+      setSyncStatus('idle');
+      return;
+    }
+    setSyncStatus('logged_out');
   }, []);
 
   const exportData = useCallback(() => {

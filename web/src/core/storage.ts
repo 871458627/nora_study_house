@@ -130,6 +130,8 @@ export function saveCachedState(state: SyncState): void {
   }
 }
 
+/** 换账号清本机：学习数据缓存 + 设备态（PIN 与同步簿记）一并重置；
+ *  审计队列由 securityEvents.clearOutbox() 单独清理。 */
 export function clearLocalData(): void {
   try {
     storage()?.removeItem(CACHE_KEY);
