@@ -68,7 +68,7 @@ export function useSpeech() {
   }, [supported]);
 
   const speak = useCallback(
-    (text: string, lang = 'zh-CN', rate = 0.9, onFail?: () => void): boolean => {
+    (text: string, lang = 'zh-CN', rate = 0.9, onFail?: () => void, onEnd?: () => void): boolean => {
       if (!supported) {
         onFail?.();
         return false;
@@ -111,6 +111,10 @@ export function useSpeech() {
           if (started || call.cancelled) return;
           window.clearTimeout(watchdog);
           onFail?.();
+        });
+        utterance.addEventListener('end', () => {
+          if (call.cancelled) return;
+          onEnd?.();
         });
         if (wasBusy) {
           pendingSpeakTimerRef.current = window.setTimeout(() => {
