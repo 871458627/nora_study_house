@@ -22,6 +22,7 @@
   --accent: #0071e3;
   --accent-deep: #0068d0;
   --accent-edge: #0068d0;
+  --accent-soft: #e3edfb;
   --brand: #ff6b8e;
   --brand-soft: #ffe9f0;
   --rose: #e0568a;
@@ -6205,3 +6206,14 @@ a.task-row:active {
 .grade-preview{display:flex;align-items:baseline;gap:10px;background:#f7f7f9;border-radius:12px;padding:11px 14px;}
 .grade-preview>span{font-size:11.5px;color:var(--sub);flex:none;}
 .grade-preview>b{font-size:13.5px;font-weight:650;}
+
+/* 课文朗读条（2026-10-26） */
+.lesson-reader{display:flex;gap:14px;align-items:center;margin:0 0 20px;padding:14px 16px;}
+.lesson-reader-btn{width:46px;height:46px;border-radius:999px;border:1.5px solid var(--line);background:#fff;color:var(--ink);display:flex;align-items:center;justify-content:center;flex:none;min-width:46px;}
+.lesson-reader-btn.speaking{background:var(--accent,#c1355e);border-color:var(--accent,#c1355e);color:#fff;box-shadow:0 6px 16px rgba(193,53,94,.2);}
+.lesson-reader-btn:disabled{opacity:.45;}
+.lesson-reader-body{min-width:0;}
+.lesson-reader-body b{font-size:14px;font-weight:650;display:block;margin-bottom:2px;}
+.reader-current{font-size:13px;color:var(--ink);line-height:1.6;margin:0;}
+.reader-hint{font-size:12px;color:var(--sub);line-height:1.6;margin:0;}
+.reader-progress{font-size:10.5px;color:var(--ter,#86868b);}
