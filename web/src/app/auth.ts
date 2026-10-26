@@ -34,7 +34,8 @@ export async function switchGradeRequest(
   const token = accessToken;
   if (!token) throw new AuthError('unauthorized', 401);
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 8000);
+  // 封存 + 恢复比常规同步重（多次事务），Neon 冷启动时可能超过 8s，放宽到 15s。
+  const timer = setTimeout(() => controller.abort(), 15000);
   let res: Response;
   try {
     res = await fetch('/api/v1/grade/switch', {

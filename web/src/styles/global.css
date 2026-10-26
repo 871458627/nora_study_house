@@ -6197,3 +6197,11 @@ a.task-row:active {
 .pending-conflict .text-link.banner-cta:active {
   transform: scale(0.97);
 }
+
+/* 年级与教材（docs/12 v1.2）：两列下拉 + 教材预览 + 显式切换按钮 */
+.grade-pick-row{display:flex;gap:12px;flex-wrap:wrap;}
+.grade-pick{flex:1;min-width:150px;display:flex;flex-direction:column;gap:6px;}
+.grade-pick>span{font-size:12px;font-weight:600;color:var(--sub);}
+.grade-preview{display:flex;align-items:baseline;gap:10px;background:#f7f7f9;border-radius:12px;padding:11px 14px;}
+.grade-preview>span{font-size:11.5px;color:var(--sub);flex:none;}
+.grade-preview>b{font-size:13.5px;font-weight:650;}

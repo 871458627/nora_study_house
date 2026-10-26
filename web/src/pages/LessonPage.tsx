@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useApp } from '../app/AppProvider';
 import { Icon } from '../components/Icon';
@@ -36,6 +37,16 @@ export function LessonPage() {
   const { state } = useApp();
   const lesson = lessonId ? lessonById(lessonId) : undefined;
   const { speak, supported, hasVoice } = useSpeech();
+  const [speechFailed, setSpeechFailed] = useState(false);
+
+  useEffect(() => {
+    setSpeechFailed(false);
+  }, [lessonId]);
+
+  const speakWord = (text: string) => {
+    setSpeechFailed(false);
+    speak(text, 'en-US', 0.85, () => setSpeechFailed(true));
+  };
 
   if (!lesson) {
     return (
@@ -225,6 +236,12 @@ export function LessonPage() {
               <span>这台设备没有英语语音，朗读按钮先收起；可以看中文意思和例句来记，不影响做题。</span>
             </div>
           )}
+          {englishSpeech && speechFailed && (
+            <div className="tip-line voice-fallback">
+              <Icon name="wifi-off" size={14} />
+              <span>点了朗读但这台设备没有发出声音；可以换一个浏览器再试，或先看例句和中文意思来记。</span>
+            </div>
+          )}
           <div className="english-word-list">
             {lesson.words.map(word => (
               <div key={word.id} className="english-word">
@@ -242,14 +259,14 @@ export function LessonPage() {
                       type="button"
                       className="icon-btn"
                       aria-label={`朗读 ${word.en}`}
-                      onClick={() => speak(word.en, 'en-US', 0.85)}
+                      onClick={() => speakWord(word.en)}
                     >
                       <Icon name="speaker" size={17} />
                     </button>
                     <button
                       type="button"
                       className="text-link sentence-speak"
-                      onClick={() => speak(word.sentence, 'en-US', 0.85)}
+                      onClick={() => speakWord(word.sentence)}
                     >
                       听短句
                     </button>

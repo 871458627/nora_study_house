@@ -200,3 +200,18 @@ export function oralStageForCurrentPack(lessonOrder: number): OralStage | undefi
 export function hasPack(key: GradeKey): boolean {
   return PACKS[key] !== undefined;
 }
+
+/** 某年级任一学期有内容包（年级下拉可用性）。 */
+export function gradeHasContent(grade: Grade): boolean {
+  return PACKS[gradeKeyOf(grade, 's1')] !== undefined || PACKS[gradeKeyOf(grade, 's2')] !== undefined;
+}
+
+/** 指定年级学期的教材版本（语文 edition 代表整套），未上架返回 null。 */
+export function packEditionFor(key: GradeKey): string | null {
+  return PACKS[key]?.edition.chinese ?? null;
+}
+
+/** 当前包的学期（供页面文案动态化）。 */
+export function currentSemesterOf(): Semester {
+  return (currentKey.match(/s[12]$/)?.[0] as Semester) ?? 's1';
+}

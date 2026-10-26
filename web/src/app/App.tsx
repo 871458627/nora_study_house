@@ -16,6 +16,7 @@ import { PetPage } from '../pages/PetPage';
 import { ShopPage } from '../pages/ShopPage';
 import { BadgesPage } from '../pages/BadgesPage';
 import { RecordsPage } from '../pages/RecordsPage';
+import { SportsPage } from '../pages/SportsPage';
 import { ReportPage } from '../pages/ReportPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { MistakeRetryPage } from '../pages/MistakeRetryPage';
@@ -145,6 +146,7 @@ export function App() {
           <Route path="/pet" element={<PetPage />} />
           <Route path="/shop" element={<ShopPage />} />
           <Route path="/badges" element={<BadgesPage />} />
+          <Route path="/sports" element={<LearnGate><SportsPage /></LearnGate>} />
           <Route path="/records" element={<RecordsPage />} />
           <Route path="/report" element={<ReportPage />} />
           <Route path="/settings" element={<SettingsPage />} />

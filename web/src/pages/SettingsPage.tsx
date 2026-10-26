@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { autoSemester, SUBJECTS } from '../data/content';
+import { autoSemester, gradeHasContent, gradeKeyOf, packEditionFor, SUBJECTS } from '../data/content';
 import type { Grade } from '../core/model';
 import { useApp } from '../app/AppProvider';
 import { AuthError } from '../app/auth';
@@ -49,6 +49,29 @@ function authErrorText(error: unknown): string {
   }
   return '请求没有完成，请稍后再试。';
 }
+
+/** 切换失败按原因区分（docs/06 §5.1 口径）：未登录/断网给可行动文案，其余保持笼统。 */
+function gradeSwitchErrorText(error: unknown): string {
+  if (error instanceof AuthError) {
+    if (error.status === 401 || error.code === 'unauthorized' || error.code === 'login_required') {
+      return '家长登录后才能切换年级，请先在下方登录家长账号。';
+    }
+    if (error.code === 'offline') return '网络没有连上，请联网后再试。';
+    if (error.code === 'rate_limited') return '操作太频繁，请稍等一会再试。';
+  }
+  return '切换没有完成，请稍后再试。';
+}
+
+/** 切换进行中的弹窗内蒙板：挡住全部交互；单请求无真实进度可报，滑动条只表达「正在进行」。 */
+const GRADE_SWITCH_MASK_CSS = `
+.grade-switch-mask{position:absolute;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.82);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);border-radius:24px;}
+.grade-switch-progress{display:flex;flex-direction:column;align-items:center;gap:9px;padding:0 30px;text-align:center;}
+.grade-switch-progress b{font-size:15px;}
+.grade-switch-progress span{font-size:12.5px;color:var(--sub);line-height:1.6;}
+.grade-switch-bar{width:100%;max-width:250px;height:8px;border-radius:999px;background:#f3e4dc;overflow:hidden;}
+.grade-switch-bar i{display:block;height:100%;width:42%;border-radius:999px;background:var(--brand);animation:grade-switch-slide 1.15s ease-in-out infinite;}
+@keyframes grade-switch-slide{from{transform:translateX(-105%)}to{transform:translateX(345%)}}
+`;
 
 function formatWhen(value?: string): string {
   if (!value) return '还没有同步过';
@@ -108,36 +131,51 @@ export function SettingsPage() {
 
   const currentGrade = state.grade ?? 2;
   const currentSemester = state.semesterOverride ?? autoSemester();
+  // 草稿态（docs/12 v1.2）：下拉只改草稿并实时预览教材，点「切换」才弹确认。
+  const [draftGrade, setDraftGrade] = useState<number>(currentGrade);
+  const [draftSemester, setDraftSemester] = useState<'s1' | 's2'>(currentSemester);
   const [pendingGrade, setPendingGrade] = useState<number | null>(null);
   const [pendingSemester, setPendingSemester] = useState<'s1' | 's2'>('s1');
-  const [sameSemesterError, setSameSemesterError] = useState(false);
+  const [switchErrorText, setSwitchErrorText] = useState<string | null>(null);
 
-  const openGradeSwitch = (grade: number) => {
-    if (grade === currentGrade) return;
-    const semester = autoSemester();
-    if (grade === currentGrade && semester === currentSemester) return;
-    setSameSemesterError(false);
-    setPendingGrade(grade);
-    setPendingSemester(semester);
+  useEffect(() => {
+    setDraftGrade(currentGrade);
+    setDraftSemester(currentSemester);
+  }, [currentGrade, currentSemester]);
+
+  const draftKey = gradeKeyOf(draftGrade as Grade, draftSemester);
+  const draftEdition = packEditionFor(draftKey);
+  const draftDirty = draftGrade !== currentGrade || draftSemester !== currentSemester;
+
+  /** 联动：换年级时学期回到日期自动值；该学期无内容则落到有内容的一册。 */
+  const onDraftGradeChange = (grade: number) => {
+    setDraftGrade(grade);
+    let semester = autoSemester();
+    if (!packEditionFor(gradeKeyOf(grade as Grade, semester))) {
+      semester = semester === 's1' ? 's2' : 's1';
+    }
+    setDraftSemester(semester);
+  };
+
+  /** 草稿 → 确认弹窗（docs/12 v1.2）：切换目标取当前草稿的年级 + 学期。 */
+  const openGradeSwitch = () => {
+    if (!draftDirty || !draftEdition || gradeSwitching) return;
+    setSwitchErrorText(null);
+    setPendingGrade(draftGrade);
+    setPendingSemester(draftSemester);
   };
 
   const confirmGradeSwitch = async () => {
-    if (pendingGrade === null) return;
+    if (pendingGrade === null || gradeSwitching) return;
+    setSwitchErrorText(null);
     try {
       await switchGrade(pendingGrade as Grade, pendingSemester);
       setPendingGrade(null);
-    } catch {
-      setSameSemesterError(true);
-      notify('切换没有完成，请稍后再试。');
+    } catch (error) {
+      const text = gradeSwitchErrorText(error);
+      setSwitchErrorText(text);
+      notify(text);
     }
-  };
-
-  /** 同年级换册：直接切换（key 不同）。 */
-  const switchSemesterInPlace = (semester: 's1' | 's2') => {
-    if (semester === currentSemester) return;
-    setPendingSemester(semester);
-    setPendingGrade(currentGrade);
-    setSameSemesterError(false);
   };
 
   const setTimetableCell = (dayIndex: number, periodIndex: number, value: string) => {
@@ -257,40 +295,56 @@ export function SettingsPage() {
                 <h2>年级与教材</h2>
                 <span className="section-aside">{SUBJECTS[0]?.edition}</span>
               </div>
-              <div className="settings-row">
-                <div>
-                  <b>当前年级</b>
-                  <span className="field-hint">切换后学习内容与教材随之变更，旧年级数据完整封存。</span>
-                </div>
-                <select
-                  className="form-select"
-                  value={currentGrade}
-                  aria-label="选择年级"
-                  onChange={(event) => openGradeSwitch(Number(event.target.value))}
-                >
-                  {GRADE_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+              <div className="grade-pick-row">
+                <label className="grade-pick">
+                  <span>年级</span>
+                  <select
+                    className="form-select"
+                    value={draftGrade}
+                    aria-label="选择年级"
+                    onChange={(event) => onDraftGradeChange(Number(event.target.value))}
+                  >
+                    {GRADE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value} disabled={!gradeHasContent(option.value as Grade)}>
+                        {option.label}{gradeHasContent(option.value as Grade) ? '' : '（内容整理中）'}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="grade-pick">
+                  <span>学期</span>
+                  <select
+                    className="form-select"
+                    value={draftSemester}
+                    aria-label="选择学期"
+                    onChange={(event) => setDraftSemester(event.target.value as 's1' | 's2')}
+                  >
+                    <option value="s1" disabled={!packEditionFor(gradeKeyOf(draftGrade as Grade, 's1'))}>上册</option>
+                    <option value="s2" disabled={!packEditionFor(gradeKeyOf(draftGrade as Grade, 's2'))}>下册</option>
+                  </select>
+                </label>
               </div>
-              <div className="settings-row">
-                <div>
-                  <b>学期</b>
-                  <span className="field-hint">默认按日期自动；也可手动换册（上/下册内容不同）。</span>
-                </div>
-                <select
-                  className="form-select"
-                  value={currentSemester}
-                  aria-label="选择学期"
-                  onChange={(event) => switchSemesterInPlace(event.target.value as 's1' | 's2')}
-                >
-                  <option value="s1">上册（自动/手动）</option>
-                  <option value="s2">下册</option>
-                </select>
+              <div className="grade-preview">
+                <span>切换后教材</span>
+                <b>{draftEdition ?? '该年级内容整理中，敬请期待'}</b>
               </div>
-              <p className="settings-note">切换会先封存现在的进度，星星、桃粮和小桃都会带走；切回原年级进度自动接续。</p>
+              <p className="settings-note">
+                切换会先封存现在的进度，星星、桃粮和小桃都会带走；切回原年级进度自动接续。
+              </p>
+              <div className="settings-actions">
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={openGradeSwitch}
+                  disabled={!draftDirty || !draftEdition || gradeSwitching}
+                >
+                  {gradeSwitching
+                    ? '切换中…'
+                    : draftDirty && draftEdition
+                      ? '切换到 ' + (GRADE_OPTIONS[draftGrade - 1]?.label ?? '') + ' · ' + SEMESTER_LABEL[draftSemester]
+                      : '与当前一致'}
+                </button>
+              </div>
             </section>
 
             <section className="settings-card card">
@@ -808,13 +862,14 @@ export function SettingsPage() {
         {pendingGrade !== null && (
           <div className="modal-backdrop" role="presentation">
             <div className="modal" role="dialog" aria-modal="true" aria-label="确认切换年级">
+              <style>{GRADE_SWITCH_MASK_CSS}</style>
               <h2>切换到{GRADE_OPTIONS.find((g) => g.value === pendingGrade)?.label} · {SEMESTER_LABEL[pendingSemester]}？</h2>
               <p className="modal-lede">
                 学习内容与教材将切换到新年级；现在的进度、错题会完整封存，
                 星星、桃粮和小桃都会带走。切回原年级时进度自动接续。
               </p>
-              {sameSemesterError && (
-                <p className="gentle-note warn" role="alert">切换没有完成，请稍后再试。</p>
+              {switchErrorText && (
+                <p className="gentle-note warn" role="alert">{switchErrorText}</p>
               )}
               <div className="settings-actions">
                 <button type="button" className="btn btn-ghost" onClick={() => setPendingGrade(null)} disabled={gradeSwitching}>
@@ -824,6 +879,15 @@ export function SettingsPage() {
                   {gradeSwitching ? '切换中…' : '确认切换'}
                 </button>
               </div>
+              {gradeSwitching && (
+                <div className="grade-switch-mask" role="status" aria-live="polite">
+                  <div className="grade-switch-progress">
+                    <b>正在切换教材…</b>
+                    <span>正在封存现有进度、准备新教材，请不要离开或关闭页面。</span>
+                    <div className="grade-switch-bar"><i /></div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

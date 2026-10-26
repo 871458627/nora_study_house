@@ -45,7 +45,7 @@ export function TextbookPage() {
     <div className="page textbook-page">
       <header className="page-head">
         <div>
-          <p className="eyebrow">课本 · 二年级上册</p>
+          <p className="eyebrow">课本 · {SUBJECTS[0]?.edition.replace('统编版 · ', '').replace('人教版 · ', '')}</p>
           <h1>跟着课本，一课一课来。</h1>
           <p className="page-lede">
             先看知识卡，再做几道题。学过的课会按 1 / 3 / 7 天的节奏回来复习。

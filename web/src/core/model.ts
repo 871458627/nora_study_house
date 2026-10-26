@@ -1,5 +1,6 @@
 import { DEFAULT_PET_ID, PET_BY_ID } from '../data/pets';
 import { DEFAULT_SETTINGS, DEFAULT_TIMETABLE } from '../data/defaults';
+import { SPORTS_MAX_CUSTOM_ITEMS, type SportsItem } from '../data/sports';
 import type {
   Lesson,
   PlanTask,
@@ -116,6 +117,18 @@ export interface FreePracticeLog {
   dictationCorrect: number;
 }
 
+/**
+ * 运动打卡（docs/06 §3.11）：按日记录 {项目 id: 数值}，奖励在打卡动作里
+ * 结算进 rewards（桃粮/星星/大餐），此处只存事实数据。
+ */
+export interface SportsState {
+  logs: Record<string, Record<string, number>>;
+  customItems: SportsItem[];
+  streak: number;
+  bestStreak: number;
+  lastCheckDate?: string;
+}
+
 export type Grade = 1 | 2 | 3 | 4 | 5 | 6;
 export type Semester = 's1' | 's2';
 
@@ -143,6 +156,8 @@ export interface SyncState {
   dailyPlans: Record<string, DailyPlan>;
   dailyLogs: Record<string, DailyLog>;
   freeLogs: Record<string, FreePracticeLog>;
+  /** 运动打卡（docs/06 §3.11）：旧数据缺省为空结构 */
+  sports: SportsState;
   updatedAt: string;
 }
 
@@ -193,6 +208,7 @@ export function createInitialState(): SyncState {
     dailyPlans: {},
     dailyLogs: {},
     freeLogs: {},
+    sports: { logs: {}, customItems: [], streak: 0, bestStreak: 0 },
     updatedAt: new Date().toISOString(),
   };
 }
@@ -347,6 +363,54 @@ function normalizePraise(source: unknown[]): PraiseNote[] {
   return notes;
 }
 
+function normalizeSportsItem(raw: unknown): SportsItem | null {
+  if (!isRecord(raw)) return null;
+  const id = typeof raw.id === 'string' ? raw.id.trim().slice(0, 40) : '';
+  const name = typeof raw.name === 'string' ? raw.name.trim().slice(0, 12) : '';
+  const unit = typeof raw.unit === 'string' ? raw.unit.trim().slice(0, 6) : '';
+  const goal = Number(raw.goal);
+  const step = Number(raw.step);
+  if (!id || !name || !unit || !Number.isFinite(goal) || goal <= 0) return null;
+  return {
+    id: id.startsWith('custom-') ? id : `custom-${id}`,
+    name,
+    unit,
+    goal: Math.min(100000, Math.round(goal)),
+    step: Number.isFinite(step) && step > 0 ? Math.min(1000, Math.round(step)) : 1,
+  };
+}
+
+function normalizeSports(value: unknown): SportsState {
+  if (!isRecord(value)) return { logs: {}, customItems: [], streak: 0, bestStreak: 0 };
+  const logs: Record<string, Record<string, number>> = {};
+  if (isRecord(value.logs)) {
+    for (const [date, entries] of Object.entries(value.logs)) {
+      if (!isValidDateKey(date) || !isRecord(entries)) continue;
+      const day: Record<string, number> = {};
+      for (const [itemId, raw] of Object.entries(entries)) {
+        const num = Number(raw);
+        if (itemId && Number.isFinite(num) && num >= 0) {
+          day[itemId.slice(0, 40)] = Math.min(100000, Math.round(num));
+        }
+      }
+      if (Object.keys(day).length > 0) logs[date] = day;
+    }
+  }
+  const customItems: SportsItem[] = Array.isArray(value.customItems)
+    ? value.customItems
+        .map(normalizeSportsItem)
+        .filter((item): item is SportsItem => item !== null)
+        .slice(0, SPORTS_MAX_CUSTOM_ITEMS)
+    : [];
+  return {
+    logs,
+    customItems,
+    streak: Math.max(0, Number(value.streak) || 0),
+    bestStreak: Math.max(0, Number(value.bestStreak) || 0),
+    lastCheckDate: isValidDateKey(value.lastCheckDate) ? value.lastCheckDate : undefined,
+  };
+}
+
 export function normalizeState(value: unknown): SyncState | null {
   if (!isRecord(value) || value.schemaVersion !== SCHEMA_VERSION) return null;
   const base = createInitialState();
@@ -487,6 +551,7 @@ export function normalizeState(value: unknown): SyncState | null {
     dailyPlans: normalizePlans(value.dailyPlans),
     dailyLogs: normalizeLogs(value.dailyLogs),
     freeLogs: normalizeFreeLogs(value.freeLogs),
+    sports: normalizeSports(value.sports),
     updatedAt: typeof value.updatedAt === 'string' ? value.updatedAt : new Date().toISOString(),
   };
 }

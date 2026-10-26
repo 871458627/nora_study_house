@@ -1,6 +1,7 @@
 import { ACCESSORIES } from '../data/defaults';
 import { PET_BY_ID } from '../data/pets';
 import { lessonsForSubject } from '../data/content';
+import { SPORTS_MAX_CUSTOM_ITEMS, type SportsItem } from '../data/sports';
 import type { Lesson, SubjectId, Timetable } from '../data/types';
 import { todayKey } from './date';
 import {
@@ -12,6 +13,7 @@ import {
 import { decayPet, stageFromFedDays, STAGES } from './pet';
 import { generatePlan } from './plan';
 import { applyFreeDictation, applyFreePractice, applyTaskOutcome, feedPet } from './progress';
+import { findSportsItem, sportsCheckinDelta } from './sports';
 
 export type AppAction =
   | { type: 'replace'; state: SyncState }
@@ -38,7 +40,10 @@ export type AppAction =
   | { type: 'mark-stage-seen'; date: string }
   | { type: 'praise-add'; text: string; date: string }
   | { type: 'praise-read' }
-  | { type: 'praise-remove'; id: string };
+  | { type: 'praise-remove'; id: string }
+  | { type: 'sports-checkin'; date: string; itemId: string; value: number }
+  | { type: 'sports-custom-add'; item: SportsItem }
+  | { type: 'sports-custom-remove'; id: string };
 
 function withPlan(state: SyncState, date: string): SyncState {
   if (state.dailyPlans[date]) return state;
@@ -243,6 +248,73 @@ export function appReducer(state: SyncState, action: AppAction): SyncState {
       return {
         ...state,
         pet: { ...state.pet, skin: action.petId },
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    case 'sports-checkin': {
+      // 运动打卡（docs/06 §3.11）：奖励结算在 core/sports 纯函数里，只增不扣
+      const item = findSportsItem(state.sports, action.itemId);
+      if (!item) return state;
+      const value = Math.max(0, Math.min(100000, Math.round(action.value)));
+      const delta = sportsCheckinDelta(state.sports, action.date, item, value);
+      if (!delta) return state;
+      return {
+        ...state,
+        sports: delta.sports,
+        rewards: {
+          ...state.rewards,
+          food: state.rewards.food + delta.foodGain,
+          stars: state.rewards.stars + delta.starGain,
+          meals: state.rewards.meals + delta.mealGain,
+        },
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    case 'sports-custom-add': {
+      const raw = action.item;
+      const item: SportsItem = {
+        id: raw.id.trim().slice(0, 40),
+        name: raw.name.trim().slice(0, 12),
+        unit: raw.unit.trim().slice(0, 6),
+        goal: Math.max(1, Math.min(100000, Math.round(raw.goal))),
+        step: Math.max(1, Math.min(1000, Math.round(raw.step) || 1)),
+      };
+      if (!item.id || !item.name || !item.unit) return state;
+      if (state.sports.customItems.length >= SPORTS_MAX_CUSTOM_ITEMS) return state;
+      // 同 id 或同名已存在 → 忽略（幂等）
+      if (
+        state.sports.customItems.some(
+          existing => existing.id === item.id || existing.name === item.name,
+        )
+      ) {
+        return state;
+      }
+      return {
+        ...state,
+        sports: { ...state.sports, customItems: [...state.sports.customItems, item] },
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    case 'sports-custom-remove': {
+      if (!state.sports.customItems.some(item => item.id === action.id)) return state;
+      // 连历史记录一并清理，避免孤儿条目
+      const logs: typeof state.sports.logs = {};
+      for (const [date, entries] of Object.entries(state.sports.logs)) {
+        const rest = Object.fromEntries(
+          Object.entries(entries).filter(([itemId]) => itemId !== action.id),
+        );
+        if (Object.keys(rest).length > 0) logs[date] = rest;
+      }
+      return {
+        ...state,
+        sports: {
+          ...state.sports,
+          customItems: state.sports.customItems.filter(item => item.id !== action.id),
+          logs,
+        },
         updatedAt: new Date().toISOString(),
       };
     }

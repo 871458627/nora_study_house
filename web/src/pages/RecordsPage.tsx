@@ -13,10 +13,22 @@ import {
   lessonsForSubject,
 } from '../data/content';
 import { addDays, formatMonthDay, startOfWeek, todayKey, weekdayShort } from '../core/date';
+import { sportsBestForItem, sportsItemsFor, sportsRecentDays } from '../core/sports';
 import type { DictationEntry } from '../core/model';
 import type { DictationWord } from '../data/types';
 
 const WEEKDAY_SHORT = ['一', '二', '三', '四', '五', '六', '日'];
+
+/** 运动打卡块样式（组件内 <style>：全局样式表由商城迭代并行占用，上线后迁移） */
+const SPORTS_RECORDS_CSS = `
+.sports-week{display:flex;gap:6px;margin:10px 0 12px;}
+.sports-week i{flex:1;height:34px;border-radius:10px;background:var(--line-soft);display:flex;align-items:center;justify-content:center;font-style:normal;font-size:12px;color:var(--sub);}
+.sports-week i.on{background:var(--brand-soft);color:#c2496f;font-weight:500;}
+.sports-best{list-style:none;margin:0 0 10px;padding:0;display:flex;flex-wrap:wrap;gap:8px;}
+.sports-best li{background:var(--line-soft);border-radius:10px;padding:6px 12px;font-size:12.5px;display:flex;gap:8px;align-items:baseline;}
+.sports-best b{font-weight:500;}
+.sports-empty{font-size:12.5px;color:var(--sub);margin:0 0 10px;}
+`;
 
 function archiveGradeLabel(gradeKey: string): string {
   const grade = Number(gradeKey.slice(1, 2));
@@ -66,6 +78,10 @@ export function RecordsPage() {
   const freeRate = freeTotals.questions
     ? Math.round((freeTotals.correct / freeTotals.questions) * 100)
     : null;
+  const sportsWeek = sportsRecentDays(state.sports, today, 7);
+  const sportsBestRows = sportsItemsFor(state.sports)
+    .map(item => ({ item, best: sportsBestForItem(state.sports, item.id) }))
+    .filter(row => row.best !== null);
 
   const subjectRows = SUBJECTS.map(meta => {
     const lessons = lessonsForSubject(meta.id);
@@ -161,6 +177,42 @@ export function RecordsPage() {
                 })}
               </div>
             </div>
+          </section>
+
+          <section className="card records-card">
+            <style>{SPORTS_RECORDS_CSS}</style>
+            <div className="section-title">
+              <h2>运动打卡</h2>
+              <span>连续 {state.sports.streak} 天 · 最长 {state.sports.bestStreak} 天</span>
+            </div>
+            <div className="sports-week" role="img" aria-label="近 7 天运动打卡格子">
+              {sportsWeek.map(day => (
+                <i
+                  key={day.date}
+                  className={day.checkedCount > 0 ? 'on' : ''}
+                  title={`${formatMonthDay(day.date)} ${weekdayShort(day.date)} · ${day.checkedCount > 0 ? `打卡 ${day.checkedCount} 项` : '未打卡'}`}
+                >
+                  {weekdayShort(day.date).slice(1)}
+                </i>
+              ))}
+            </div>
+            {sportsBestRows.length > 0 ? (
+              <ul className="sports-best">
+                {sportsBestRows.map(({ item, best }) => (
+                  <li key={item.id}>
+                    <b>{item.name}</b>
+                    <span>
+                      最高 {best!.value} {item.unit}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="sports-empty">还没有运动记录。每天动一动，桃粮和星星都会有的。</p>
+            )}
+            <Link to="/sports" className="text-link">
+              去运动打卡 <Icon name="chevron" size={13} />
+            </Link>
           </section>
 
           <section className="card records-card">

@@ -9,6 +9,7 @@ import type { PlanTask, TaskKind } from '../data/types';
 import { formatMonthDayWeek, greeting, todayKey } from '../core/date';
 import { petMood, moodLine, nextStage, stageInfo } from '../core/pet';
 import { lessonPointerFor } from '../core/plan';
+import { sportsDayStatus, sportsItemsFor } from '../core/sports';
 
 const KIND_ICON: Record<TaskKind, IconName> = {
   review: 'book',
@@ -70,6 +71,7 @@ export function TodayPage() {
   const allDone = tasks.length > 0 && done.length >= tasks.length;
   const foodEarnedToday = log?.food ?? 0;
   const englishLesson = lessonPointerFor(state, 'english');
+  const sportsStatus = sportsDayStatus(state.sports, date, sportsItemsFor(state.sports));
 
   useEffect(() => {
     if (!plan && state.onboarded) {
@@ -231,6 +233,23 @@ export function TodayPage() {
               <span>{next ? `距离${next.name}还差 ${Math.max(0, next.minDays - state.pet.fedDays)} 天` : '已经长成大桃啦'}</span>
               <Link to="/pet" className="text-link">
                 去陪小桃 <Icon name="chevron" size={13} />
+              </Link>
+            </div>
+          </section>
+
+          <section className="card rail-card">
+            <span className="rail-icon">
+              <Icon name="heart" size={18} />
+            </span>
+            <div>
+              <b>今日运动{state.sports.streak > 0 ? ` · 连续 ${state.sports.streak} 天` : ''}</b>
+              <p>
+                {sportsStatus.checkedCount === 0
+                  ? '今天还没动起来。打卡一次就送 1 份桃粮，达标还能攒星星。'
+                  : `已打卡 ${sportsStatus.checkedCount} 项、达标 ${sportsStatus.metCount} 项，今日 +${sportsStatus.foodEarned} 桃粮 +${sportsStatus.starEarned} 星。`}
+              </p>
+              <Link to="/sports" className="text-link">
+                {sportsStatus.checkedCount === 0 ? '去运动打卡' : '继续打卡'} <Icon name="chevron" size={13} />
               </Link>
             </div>
           </section>
