@@ -130,6 +130,24 @@ export function SettingsPage() {
     setNickname(state.profile.nickname);
   }, [state.profile.nickname]);
 
+  // 备份提醒（docs/12 批次3）：距上次导出超过 7 天给温和提示
+  const [backupAgeText, setBackupAgeText] = useState('');
+  useEffect(() => {
+    const compute = () => {
+      try {
+        const raw = localStorage.getItem('xiaotao-last-backup');
+        if (!raw) { setBackupAgeText('还没有导出过备份，第一次就趁现在吧。'); return; }
+        const days = Math.floor((Date.now() - new Date(raw).getTime()) / 86_400_000);
+        setBackupAgeText(days >= 7 ? `距上次导出备份已经 ${days} 天了，建议导一份新的。` : '');
+      } catch {
+        setBackupAgeText('');
+      }
+    };
+    compute();
+    const timer = window.setInterval(compute, 60 * 60 * 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   const currentGrade = state.grade ?? 2;
   const currentSemester = state.semesterOverride ?? autoSemester();
   // 草稿态（docs/12 v1.2）：下拉只改草稿并实时预览教材，点「切换」才弹确认。
@@ -847,6 +865,11 @@ export function SettingsPage() {
                 <b>留一份自己的备份</b>
                 <p>
                   建议每周导出一次 JSON。万一云端数据被误改，可以用备份恢复学习记录、奖励和宠物状态。
+                  {backupAgeText && (
+                    <span style={{ display: 'block', marginTop: 4, fontWeight: 600 }}>
+                      {backupAgeText}
+                    </span>
+                  )}
                 </p>
               </div>
             </section>

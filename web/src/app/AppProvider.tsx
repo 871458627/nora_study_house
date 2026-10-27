@@ -776,6 +776,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const exportData = useCallback(() => {
     downloadBackup(stateRef.current);
+    // 备份提醒锚点（docs/12 批次3）：设备本机记录上次导出时间
+    try {
+      localStorage.setItem('xiaotao-last-backup', new Date().toISOString());
+    } catch {
+      // 隐私模式等存储不可用：提醒静默降级
+    }
   }, []);
 
   const importData = useCallback(

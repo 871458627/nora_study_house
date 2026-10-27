@@ -15,9 +15,40 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="小桃学习屋" />
   <title>小桃学习屋</title>
+  <style>
+    /* 免费实例休眠唤醒期（20~30s）的零依赖等待屏：HTML 加载即显示，应用就绪后由内联脚本摘除 */
+    #wake-screen{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#fbfbfd;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;color:#1d1d1f;transition:opacity .3s ease;}
+    #wake-screen.hide{opacity:0;pointer-events:none;}
+    #wake-screen .wake-emoji{font-size:44px;line-height:1;animation:wake-bob 1.6s ease-in-out infinite;}
+    #wake-screen b{font-size:17px;font-weight:650;letter-spacing:-.01em;}
+    #wake-screen span{font-size:12.5px;color:#6e6e73;line-height:1.6;text-align:center;max-width:280px;}
+    @keyframes wake-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+    @media (prefers-reduced-motion: reduce){#wake-screen .wake-emoji{animation:none}}
+  </style>
 </head>
 <body>
+  <div id="wake-screen">
+    <div class="wake-emoji">🍑</div>
+    <b>小桃学习屋 · 服务唤醒中</b>
+    <span>免费服务器休息了一会，正在醒来（约 20~30 秒）。<br>这一页会自动进入，不用刷新。</span>
+  </div>
   <div id="root"></div>
+  <script>
+    (function () {
+      var screen = document.getElementById('wake-screen');
+      var waited = 0;
+      var timer = setInterval(function () {
+        waited += 3;
+        var root = document.getElementById('root');
+        if (root && root.childElementCount > 0) {
+          clearInterval(timer);
+          if (screen) { screen.classList.add('hide'); setTimeout(function () { if (screen) screen.remove(); }, 350); }
+          return;
+        }
+        if (waited >= 90) { clearInterval(timer); location.reload(); }
+      }, 3000);
+    })();
+  </script>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 </html>

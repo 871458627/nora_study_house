@@ -14,3 +14,10 @@ ReactDOM.createRoot(root).render(
     </AppProvider>
   </HashRouter>,
 );
+
+// 应用首帧接管后摘除休眠唤醒屏（index.html 内联；此处兜底双保险）
+const wakeScreen = document.getElementById('wake-screen');
+if (wakeScreen) {
+  wakeScreen.classList.add('hide');
+  window.setTimeout(() => wakeScreen.remove(), 400);
+}
