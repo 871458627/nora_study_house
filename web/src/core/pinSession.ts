@@ -1,7 +1,7 @@
 /**
  * Parent PIN unlock is shared for one browser session (P2-07): after a parent
  * unlocks the weekly report, opening settings should not ask again. The unlock
- * lives in sessionStorage only — it expires after 10 minutes, disappears when
+ * lives in sessionStorage only — it expires after 30 minutes, disappears when
  * the tab closes, and is never synced to another device.
  */
 export interface KvStore {
@@ -11,7 +11,7 @@ export interface KvStore {
 }
 
 export const PIN_UNLOCK_KEY = 'xiaotao-pin-unlock-until';
-export const PIN_UNLOCK_MINUTES = 10;
+export const PIN_UNLOCK_MINUTES = 30;
 
 /** Storage adapter that degrades to a no-op when sessionStorage is missing. */
 export function pinUnlockStore(): KvStore {

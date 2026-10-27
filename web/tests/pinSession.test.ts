@@ -19,15 +19,15 @@ function memoryStore(initial: Record<string, string> = {}): KvStore {
 }
 
 describe('共享家长解锁', () => {
-  it('解锁后 10 分钟内保持有效，超时自动失效', () => {
+  it('解锁后 30 分钟内保持有效，超时自动失效', () => {
     const store = memoryStore();
     const now = new Date('2026-10-22T09:00:00.000Z').getTime();
     expect(isPinUnlocked(store, now)).toBe(false);
 
     rememberPinUnlock(store, now);
-    expect(isPinUnlocked(store, now + 9 * 60_000)).toBe(true);
-    expect(pinUnlockRemainingSeconds(store, now + 9 * 60_000)).toBe(60);
-    expect(isPinUnlocked(store, now + 11 * 60_000)).toBe(false);
+    expect(isPinUnlocked(store, now + 29 * 60_000)).toBe(true);
+    expect(pinUnlockRemainingSeconds(store, now + 29 * 60_000)).toBe(60);
+    expect(isPinUnlocked(store, now + 31 * 60_000)).toBe(false);
     expect(store.getItem(PIN_UNLOCK_KEY)).toBeNull();
   });
 

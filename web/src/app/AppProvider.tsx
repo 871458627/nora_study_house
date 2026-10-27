@@ -380,6 +380,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [adoptRemote, noteSyncFailure, runWithAuthRetry]);
 
+  // 未同步提醒（docs/01 P2 清单遗留）：有本地改动未推送时关页前拦截一次。
+  useEffect(() => {
+    const handler = (event: BeforeUnloadEvent) => {
+      if (!deviceRef.current.dirty) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, []);
+
   // 内容包与 state.grade/semester 保持一致（必须在 bootstrap 之前声明，保证首帧 prepareState 用对包）。
   const gradeKey: GradeKey = currentGradeKeyOf(state.grade ?? 2, state.semesterOverride);
   useEffect(() => {

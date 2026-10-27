@@ -8,6 +8,7 @@ import type {
   Timetable,
 } from '../data/types';
 import { isValidDateKey } from './date';
+import type { ArchivedTotals } from './archive';
 
 export type LessonStatus = 'new' | 'previewed' | 'reviewed' | 'mastered';
 
@@ -153,6 +154,8 @@ export interface SyncState {
   album: AlbumEntry[];
   /** 爸妈的表扬信（家长写、孩子读） */
   praise: PraiseNote[];
+  /** 状态归档合计（docs/02 §5.1）：120 天前的日志聚合值，累计口径不丢 */
+  archivedTotals: ArchivedTotals;
   dailyPlans: Record<string, DailyPlan>;
   dailyLogs: Record<string, DailyLog>;
   freeLogs: Record<string, FreePracticeLog>;
@@ -205,6 +208,7 @@ export function createInitialState(): SyncState {
       skin: 'xiaotao',
       stageSeen: 0,
     },
+    archivedTotals: { days: 0, done: 0, minutes: 0, stars: 0, food: 0 },
     dailyPlans: {},
     dailyLogs: {},
     freeLogs: {},
@@ -411,6 +415,24 @@ function normalizeSports(value: unknown): SportsState {
   };
 }
 
+
+function normalizeArchivedTotals(value: unknown): ArchivedTotals {
+  const base = { days: 0, done: 0, minutes: 0, stars: 0, food: 0 };
+  if (typeof value !== 'object' || value === null) return base;
+  const record = value as Record<string, unknown>;
+  const num = (key: string): number => {
+    const raw = Number(record[key]);
+    return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 0;
+  };
+  return {
+    days: num('days'),
+    done: num('done'),
+    minutes: num('minutes'),
+    stars: num('stars'),
+    food: num('food'),
+  };
+}
+
 export function normalizeState(value: unknown): SyncState | null {
   if (!isRecord(value) || value.schemaVersion !== SCHEMA_VERSION) return null;
   const base = createInitialState();
@@ -548,6 +570,7 @@ export function normalizeState(value: unknown): SyncState | null {
     },
     album: normalizeAlbum(album),
     praise: normalizePraise(praise),
+    archivedTotals: normalizeArchivedTotals(value.archivedTotals),
     dailyPlans: normalizePlans(value.dailyPlans),
     dailyLogs: normalizeLogs(value.dailyLogs),
     freeLogs: normalizeFreeLogs(value.freeLogs),

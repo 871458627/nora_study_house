@@ -11,6 +11,7 @@ import {
   type TaskOutcome,
 } from './model';
 import { decayPet, stageFromFedDays, STAGES } from './pet';
+import { archiveState } from './archive';
 import { generatePlan } from './plan';
 import { applyFreeDictation, applyFreePractice, applyTaskOutcome, feedPet } from './progress';
 import { findSportsItem, sportsCheckinDelta } from './sports';
@@ -328,9 +329,11 @@ export function initialState(): SyncState {
   return createInitialState();
 }
 
-/** Applies scheduled maintenance without a user action: pet decay and today's plan. */
+/** Applies scheduled maintenance without a user action: pet decay, today's plan, state archival. */
 export function prepareState(state: SyncState, date: string): SyncState {
   if (!state.onboarded) return state;
   const ticked = appReducer(state, { type: 'daily-tick', date });
-  return appReducer(ticked, { type: 'ensure-plan', date });
+  const planned = appReducer(ticked, { type: 'ensure-plan', date });
+  // 状态归档（docs/02 §5.1）：120 天前的计划/日志清理与聚合，幂等无变化时原引用返回。
+  return archiveState(planned, date);
 }
