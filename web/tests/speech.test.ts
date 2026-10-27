@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pickVoice } from '../src/app/useSpeech';
+import { pickVoice, voiceAvailable } from '../src/app/useSpeech';
 
 const voice = (lang: string, localService = true) => ({
   lang,
@@ -33,5 +33,23 @@ describe('pickVoice（朗读语音挑选）', () => {
   it('兼容下划线的语言代码写法（如 en_US）', () => {
     expect(pickVoice([voice('en_US')], 'en-US')?.lang).toBe('en_US');
     expect(pickVoice([voice('en-US')], 'en_US')?.lang).toBe('en-US');
+  });
+});
+
+describe('voiceAvailable（语音可用性判定）', () => {
+  it('语音列表未加载完时保持乐观，避免按钮闪没', () => {
+    expect(voiceAvailable([], 'en-US', false)).toBe(true);
+  });
+
+  it('加载窗口过后仍无任何语音，如实报告不可用', () => {
+    expect(voiceAvailable([], 'en-US', true)).toBe(false);
+    expect(voiceAvailable([], 'zh-CN', true)).toBe(false);
+  });
+
+  it('有语音列表时按语言前缀匹配，与加载状态无关', () => {
+    const list = [voice('en-US'), voice('zh-CN')];
+    expect(voiceAvailable(list, 'en-US', false)).toBe(true);
+    expect(voiceAvailable(list, 'en-US', true)).toBe(true);
+    expect(voiceAvailable([voice('zh-CN')], 'en-US', true)).toBe(false);
   });
 });

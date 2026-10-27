@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { splitReadingUnits } from '../core/reading';
 import { useSpeech } from './useSpeech';
 import type { ReadSegment } from '../core/lessonReader';
 
@@ -50,23 +51,50 @@ export function useLessonReader(script: ReadSegment[], onFail?: () => void) {
       setIndex(startIndex);
       const segment = segments[startIndex]!;
       const lang = segment.lang;
-      const rate = lang === 'en-US' ? 0.85 : 0.9;
-      const ok = speak(segment.text, lang, rate, () => {
-        // 失败（无语音/启动超时）：停下并复位，页面提示设备不支持。
+      const rate = lang === 'en-US' ? 0.85 : 0.88;
+      // 感情化朗读（docs/06 克制原则）：把段拆成句，逐句朗读并在句间留
+      // 自然停顿；问句句尾语调微微上扬，其余句用温和基准音高。
+      const units = splitReadingUnits(segment.text);
+      const playUnit = (unitIndex: number) => {
         if (session !== sessionRef.current) return;
-        sessionRef.current += 1;
-        setState('idle');
-        setIndex(0);
-        onFail?.();
-      }, () => {
-        playFrom(startIndex + 1, session);
-      });
-      if (!ok) {
-        sessionRef.current += 1;
-        setState('idle');
-        setIndex(0);
-        onFail?.();
-      }
+        if (unitIndex >= units.length) {
+          window.setTimeout(() => playFrom(startIndex + 1, session), 260);
+          return;
+        }
+        const unit = units[unitIndex]!;
+        const pitch = unit.endsWith('？') ? 1.12 : 1.04;
+        const ok = speak(
+          unit,
+          lang,
+          rate,
+          () => {
+            // 失败（无语音/启动超时）：停下并复位，页面提示设备不支持。
+            if (session !== sessionRef.current) return;
+            sessionRef.current += 1;
+            setState('idle');
+            setIndex(0);
+            onFail?.();
+          },
+          () => {
+            window.setTimeout(() => playUnit(unitIndex + 1), unitIndex + 1 < units.length ? 200 : 40);
+          },
+          pitch,
+          () => {
+            // 被新一轮朗读或停止打断（比如孩子点了单词喇叭）：复位朗读条，
+            // 不再停留在「正在朗读…」的假播放态。
+            if (session !== sessionRef.current) return;
+            setState('idle');
+            setIndex(0);
+          },
+        );
+        if (!ok) {
+          sessionRef.current += 1;
+          setState('idle');
+          setIndex(0);
+          onFail?.();
+        }
+      };
+      playUnit(0);
     },
     [speak, onFail],
   );

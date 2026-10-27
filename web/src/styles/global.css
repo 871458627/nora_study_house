@@ -1919,6 +1919,47 @@ a.task-row:active {
   white-space: nowrap;
 }
 
+/* 朗读中（docs/06 §3.12：按钮要有「朗读中」态，播完自动恢复） */
+.icon-btn.speaking {
+  color: var(--accent, #c1355e);
+  border-color: var(--accent, #c1355e);
+  background: #fdf1f5;
+  animation: speak-pulse 1s ease-in-out infinite;
+}
+
+.sentence-speak.speaking,
+.word-sentence-speak.speaking {
+  color: var(--accent, #c1355e);
+}
+
+@keyframes speak-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* 点了朗读但没读出来的行内提示（docs/06 文案表：朗读点击失败） */
+.speak-fail-hint {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #a85560;
+}
+
+.english-word .speak-fail-hint {
+  grid-column: 1 / -1;
+}
+
+.speak-retry {
+  flex: none;
+  align-self: center;
+  font-size: 12px;
+}
+
 .voice-fallback {
   align-items: flex-start;
   margin: 0 0 11px;

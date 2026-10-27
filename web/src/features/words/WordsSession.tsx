@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon } from '../../components/Icon';
 import { useSpeech } from '../../app/useSpeech';
@@ -98,8 +98,37 @@ export function WordsSession({
 }: WordsSessionProps) {
   const { speak, supported, hasVoice } = useSpeech();
   const [started, setStarted] = useState(false);
+  const [speakingKey, setSpeakingKey] = useState<string | null>(null);
+  const [failedKey, setFailedKey] = useState<string | null>(null);
+  // 每次点击自增：同一按钮连点时，上一轮的打断/收尾回调不得清掉新一轮的「朗读中」态。
+  const speakSeqRef = useRef(0);
   const questions = useMemo(() => buildWordPractice(words), [words]);
   const canSpeak = supported && hasVoice('en-US');
+
+  const speakWord = (key: string, text: string) => {
+    setFailedKey(null);
+    const seq = ++speakSeqRef.current;
+    setSpeakingKey(key);
+    const isCurrent = () => speakSeqRef.current === seq;
+    speak(
+      text,
+      'en-US',
+      0.82,
+      () => {
+        // 启动失败：按钮复位，行内提示（docs/06 §3.12 失败可见）。
+        if (isCurrent()) setSpeakingKey(null);
+        setFailedKey(key);
+      },
+      () => {
+        if (isCurrent()) setSpeakingKey(null);
+      },
+      1.04,
+      () => {
+        // 被下一次朗读打断：只清自己那轮的「朗读中」态，不算失败。
+        if (isCurrent()) setSpeakingKey(null);
+      },
+    );
+  };
 
   if (!words.length) {
     return (
@@ -166,9 +195,9 @@ export function WordsSession({
                 {canSpeak && (
                   <button
                     type="button"
-                    className="icon-btn"
-                    aria-label={`朗读 ${word.en}`}
-                    onClick={() => speak(word.en, 'en-US', 0.82)}
+                    className={'icon-btn' + (speakingKey === `${word.id}:word` ? ' speaking' : '')}
+                    aria-label={speakingKey === `${word.id}:word` ? `正在朗读 ${word.en}` : `朗读 ${word.en}`}
+                    onClick={() => speakWord(`${word.id}:word`, word.en)}
                   >
                     <Icon name="speaker" size={18} />
                   </button>
@@ -181,12 +210,19 @@ export function WordsSession({
               {canSpeak && (
                 <button
                   type="button"
-                  className="text-link word-sentence-speak"
-                  onClick={() => speak(word.sentence, 'en-US', 0.82)}
+                  className={
+                    'text-link word-sentence-speak' + (speakingKey === `${word.id}:sentence` ? ' speaking' : '')
+                  }
+                  onClick={() => speakWord(`${word.id}:sentence`, word.sentence)}
                 >
                   <Icon name="speaker" size={13} />
-                  听句子
+                  {speakingKey === `${word.id}:sentence` ? '朗读中…' : '听句子'}
                 </button>
+              )}
+              {canSpeak && failedKey !== null && (
+                <p className="speak-fail-hint" role="status">
+                  这次没能读出来，再点一下试试。
+                </p>
               )}
             </article>
           ))}

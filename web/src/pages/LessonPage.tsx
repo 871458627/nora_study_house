@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useApp } from '../app/AppProvider';
 import { Icon } from '../components/Icon';
 import { SubjectChip } from '../components/ui';
 import { useSpeech } from '../app/useSpeech';
 import { useLessonReader } from '../app/useLessonReader';
+import { ReadAlong } from '../components/ReadAlong';
 import { buildLessonReadScript } from '../core/lessonReader';
 import { lessonById, unitById, lessonLabel } from '../data/content';
 import { LESSON_STATUS_LABEL, MASTERY_LABEL } from '../data/labels';
@@ -34,21 +35,57 @@ function questionKind(question: Question): string {
   return '选择';
 }
 
+/** 单词行里两次朗读尝试都失败后，收起按钮、退回「看中文意思」的静态模式。 */
+const SPEAK_GIVE_UP_AFTER_FAILURES = 2;
+
 export function LessonPage() {
   const { lessonId } = useParams();
   const { state, notify } = useApp();
   const lesson = lessonId ? lessonById(lessonId) : undefined;
   const { speak, supported, hasVoice } = useSpeech();
-  const [speechFailed, setSpeechFailed] = useState(false);
+  const [speechFailCount, setSpeechFailCount] = useState(0);
+  const [speakingKey, setSpeakingKey] = useState<string | null>(null);
+  const [failedKey, setFailedKey] = useState<string | null>(null);
+  // 每次点击自增：同一按钮连点时，上一轮的打断/收尾回调不得清掉新一轮的「朗读中」态。
+  const speakSeqRef = useRef(0);
 
   useEffect(() => {
-    setSpeechFailed(false);
+    speakSeqRef.current += 1;
+    setSpeechFailCount(0);
+    setFailedKey(null);
+    setSpeakingKey(null);
   }, [lessonId]);
 
-  const speakWord = (text: string) => {
-    setSpeechFailed(false);
-    speak(text, 'en-US', 0.85, () => setSpeechFailed(true));
+  const speakWord = (key: string, text: string) => {
+    setFailedKey(null);
+    const seq = ++speakSeqRef.current;
+    setSpeakingKey(key);
+    const isCurrent = () => speakSeqRef.current === seq;
+    speak(
+      text,
+      'en-US',
+      0.85,
+      () => {
+        // 启动失败（无语音/在线语音无网/引擎挂起）：按钮复位，行内提示，第 2 次起收起按钮。
+        if (isCurrent()) setSpeakingKey(null);
+        setFailedKey(key);
+        setSpeechFailCount(count => count + 1);
+      },
+      () => {
+        if (isCurrent()) setSpeakingKey(null);
+      },
+      1.04,
+      () => {
+        // 被下一次朗读或停止打断：只清自己那轮的「朗读中」态，不算失败。
+        if (isCurrent()) setSpeakingKey(null);
+      },
+    );
   };
+
+  // Hooks 必须无条件调用：lesson 可能为 undefined（无效课时 id），
+  // 朗读器先以空脚本待命，避免条件性少调 hook 在路由切换时整树崩溃。
+  const readScript = lesson ? buildLessonReadScript(lesson) : [];
+  const reader = useLessonReader(readScript, () => notify('这台设备暂时不能朗读，请家长读一遍。'));
 
   if (!lesson) {
     return (
@@ -71,8 +108,13 @@ export function LessonPage() {
   const doneTask = todayTask ? state.dailyLogs[today]?.done.includes(todayTask.id) : false;
   const planTask = todayTask && !doneTask ? todayTask : undefined;
   const englishSpeech = lesson.words && supported && hasVoice('en-US');
-  const readScript = buildLessonReadScript(lesson);
-  const reader = useLessonReader(readScript, () => notify('这台设备暂时不能朗读，请家长读一遍。'));
+  const voiceGaveUp = speechFailCount >= SPEAK_GIVE_UP_AFTER_FAILURES;
+  const readAlongSentences =
+    subject === 'chinese'
+      ? readScript
+          .filter(segment => segment.lang === 'zh-CN' && segment.text !== `${lesson.title}。`)
+          .map(segment => segment.text.replace(/[。！？；]$/, ''))
+      : [];
 
   return (
     <div className="page lesson-page">
@@ -161,6 +203,18 @@ export function LessonPage() {
           )}
         </div>
       </section>
+
+      {subject === 'chinese' && readAlongSentences.length > 0 && (
+        <section className="card read-along-card" aria-label="跟我读">
+          <div className="section-title">
+            <h2>跟我读</h2>
+            <span className="chip-label">读准了拿星星</span>
+          </div>
+          {readAlongSentences.map(sentence => (
+            <ReadAlong key={sentence} sentence={sentence} />
+          ))}
+        </section>
+      )}
 
 <div className="lesson-grid">
         <section className="knowledge-card card">
@@ -262,7 +316,7 @@ export function LessonPage() {
           <div className="section-title">
             <h2>单词与短句</h2>
             <span className="chip-label">
-              {englishSpeech ? '听一听，再读一遍' : '看中文意思，也能记'}
+              {englishSpeech && !voiceGaveUp ? '听一听，再读一遍' : '看中文意思，也能记'}
             </span>
           </div>
           {!englishSpeech && (
@@ -271,44 +325,65 @@ export function LessonPage() {
               <span>这台设备没有英语语音，朗读按钮先收起；可以看中文意思和例句来记，不影响做题。</span>
             </div>
           )}
-          {englishSpeech && speechFailed && (
+          {englishSpeech && voiceGaveUp && (
             <div className="tip-line voice-fallback">
               <Icon name="wifi-off" size={14} />
-              <span>点了朗读但这台设备没有发出声音；可以换一个浏览器再试，或先看例句和中文意思来记。</span>
+              <span>点了朗读但这台设备没有发出声音，朗读按钮先收起；可以换一个浏览器再试，或先看例句和中文意思来记。</span>
+              <button
+                type="button"
+                className="text-link speak-retry"
+                onClick={() => {
+                  setSpeechFailCount(0);
+                  setFailedKey(null);
+                }}
+              >
+                再试一次
+              </button>
             </div>
           )}
           <div className="english-word-list">
-            {lesson.words.map(word => (
-              <div key={word.id} className="english-word">
-                <div className="english-word-main">
-                  <b>{word.en}</b>
-                  <span>{word.zh}</span>
-                </div>
-                <p>
-                  {word.sentence}
-                  <small>{word.sentenceZh}</small>
-                </p>
-                {englishSpeech && (
-                  <div className="english-word-actions">
-                    <button
-                      type="button"
-                      className="icon-btn"
-                      aria-label={`朗读 ${word.en}`}
-                      onClick={() => speakWord(word.en)}
-                    >
-                      <Icon name="speaker" size={17} />
-                    </button>
-                    <button
-                      type="button"
-                      className="text-link sentence-speak"
-                      onClick={() => speakWord(word.sentence)}
-                    >
-                      听短句
-                    </button>
+            {lesson.words.map(word => {
+              const wordKey = `${word.id}:word`;
+              const sentenceKey = `${word.id}:sentence`;
+              const speakingWord = speakingKey === wordKey;
+              const speakingSentence = speakingKey === sentenceKey;
+              return (
+                <div key={word.id} className="english-word">
+                  <div className="english-word-main">
+                    <b>{word.en}</b>
+                    <span>{word.zh}</span>
                   </div>
-                )}
-              </div>
-            ))}
+                  <p>
+                    {word.sentence}
+                    <small>{word.sentenceZh}</small>
+                  </p>
+                  {englishSpeech && !voiceGaveUp && (
+                    <div className="english-word-actions">
+                      <button
+                        type="button"
+                        className={'icon-btn' + (speakingWord ? ' speaking' : '')}
+                        aria-label={speakingWord ? `正在朗读 ${word.en}` : `朗读 ${word.en}`}
+                        onClick={() => speakWord(wordKey, word.en)}
+                      >
+                        <Icon name="speaker" size={17} />
+                      </button>
+                      <button
+                        type="button"
+                        className={'text-link sentence-speak' + (speakingSentence ? ' speaking' : '')}
+                        onClick={() => speakWord(sentenceKey, word.sentence)}
+                      >
+                        {speakingSentence ? '朗读中…' : '听短句'}
+                      </button>
+                    </div>
+                  )}
+                  {englishSpeech && !voiceGaveUp && (failedKey === wordKey || failedKey === sentenceKey) && (
+                    <p className="speak-fail-hint" role="status">
+                      这次没能读出来，再点一下试试。
+                    </p>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </section>
       ) : null}

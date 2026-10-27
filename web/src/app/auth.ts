@@ -238,6 +238,23 @@ export async function refreshSession(): Promise<AuthSession> {
 }
 
 /**
+ * 与服务端 credentialsSchema 同口径（server/src/routes/schemas.ts）：
+ * 用户名 3-32 位字母/数字/下划线/短横线，密码 8-128 位。
+ * 服务端校验失败只返回笼统的 invalid_body（docs/03 §8.2），
+ * 所以注册前必须在这里给出具体原因。
+ */
+export function credentialProblem(username: string, password: string): string | null {
+  const name = username.trim();
+  if (!/^[a-zA-Z0-9_-]{3,32}$/.test(name)) {
+    return '用户名需 3-32 位，只能用字母、数字、下划线和短横线。';
+  }
+  if (password.length < 8 || password.length > 128) {
+    return '密码至少 8 位。';
+  }
+  return null;
+}
+
+/**
  * Best-effort revoke of the refresh cookie (logout endpoint to be provided
  * by the v2 backend); local session state is cleared regardless of outcome.
  */

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { autoSemester, gradeHasContent, gradeKeyOf, packEditionFor, SUBJECTS } from '../data/content';
 import type { Grade } from '../core/model';
 import { useApp } from '../app/AppProvider';
-import { AuthError } from '../app/auth';
+import { AuthError, credentialProblem } from '../app/auth';
 import { Icon } from '../components/Icon';
 import { BackupImportDialog, type PendingImport } from '../components/BackupImportDialog';
 import { CurrentLessonPicker } from '../components/CurrentLessonPicker';
@@ -44,7 +44,10 @@ const ERROR_LABEL: Record<string, string> = {
 function authErrorText(error: unknown): string {
   if (error instanceof AuthError) {
     if (error.code === 'invalid_credentials') return '用户名或密码不正确';
-    if (error.code === 'rate_limited') return '尝试过于频繁，请15分钟后再试';
+    if (error.code === 'rate_limited')
+      return '尝试过于频繁：注册每小时最多 3 次，登录每 15 分钟最多 5 次，请稍后再试。';
+    if (error.code === 'invalid_body')
+      return '用户名需 3-32 位（字母、数字、下划线、短横线），密码至少 8 位。';
     if (error.code === 'offline') return '网络没有连上，请联网后再试。';
   }
   return '请求没有完成，请稍后再试。';
@@ -240,6 +243,13 @@ export function SettingsPage() {
         await parentLogin({ username, password: authPassword });
         notify('已登录家长账号。');
       } else {
+        // 注册前本地预校验：服务端对格式错误只回笼统的 invalid_body，
+        // 具体原因（如密码不足 8 位）必须在这里给出。
+        const problem = credentialProblem(username, authPassword);
+        if (problem) {
+          setAuthError(problem);
+          return;
+        }
         await parentRegister({ username, password: authPassword });
         notify('注册成功，已登录。');
       }
