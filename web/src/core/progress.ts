@@ -75,18 +75,26 @@ function updateMistakes(
   outcome: TaskOutcome,
 ): SyncState['mistakes'] {
   const map = new Map(state.mistakes.map(mistake => [mistake.questionId, mistake]));
+  // 会话题目快照：口算等即时生成题不在任何课里，落库时带上完整题目供重做页直接渲染。
+  const sessionQuestions = new Map((outcome.questions ?? []).map(question => [question.id, question]));
   for (const questionId of outcome.wrongQuestionIds) {
     const existing = map.get(questionId);
     if (existing) {
       map.set(questionId, { ...existing, wrongAt: date, resolvedAt: undefined });
+      continue;
+    }
+    const lesson = lessonsForSubject('chinese')
+      .concat(lessonsForSubject('math'), lessonsForSubject('english'))
+      .find(item =>
+        [...item.questions, ...(item.afterClass ?? [])].some(question => question.id === questionId),
+      );
+    if (lesson) {
+      map.set(questionId, { questionId, lessonId: lesson.id, wrongAt: date });
     } else {
-      const lesson = lessonsForSubject('chinese')
-        .concat(lessonsForSubject('math'), lessonsForSubject('english'))
-        .find(item =>
-          [...item.questions, ...(item.afterClass ?? [])].some(question => question.id === questionId),
-        );
-      if (lesson) {
-        map.set(questionId, { questionId, lessonId: lesson.id, wrongAt: date });
+      const snapshot = sessionQuestions.get(questionId);
+      if (snapshot) {
+        // 非课本题（口算等）：lessonId 置空串 + 快照，错题本与重做页按快照渲染
+        map.set(questionId, { questionId, lessonId: '', wrongAt: date, snapshot });
       }
     }
   }
@@ -329,6 +337,25 @@ export function applyFreePractice(
       correct: outcome.correct,
       dictationTotal: words.length,
       dictationCorrect: words.filter(word => word.correct).length,
+    }),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+/** 快照错题重做（口算等）：只做订正与练习计数，不挂任何课。 */
+export function applyMistakeRedo(
+  state: SyncState,
+  date: string,
+  outcome: TaskOutcome,
+): SyncState {
+  if (outcome.total === 0) return state;
+  return {
+    ...state,
+    mistakes: updateMistakes(state, date, outcome),
+    freeLogs: recordFreeLog(state, date, {
+      sessions: 1,
+      questions: outcome.total,
+      correct: outcome.correct,
     }),
     updatedAt: new Date().toISOString(),
   };

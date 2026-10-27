@@ -13,7 +13,7 @@ import {
 import { decayPet, stageFromFedDays, STAGES } from './pet';
 import { archiveState } from './archive';
 import { generatePlan } from './plan';
-import { applyFreeDictation, applyFreePractice, applyTaskOutcome, feedPet } from './progress';
+import { applyFreeDictation, applyFreePractice, applyMistakeRedo, applyTaskOutcome, feedPet } from './progress';
 import { findSportsItem, sportsCheckinDelta } from './sports';
 
 export type AppAction =
@@ -33,6 +33,7 @@ export type AppAction =
   | { type: 'ensure-plan'; date?: string }
   | { type: 'complete-task'; date: string; taskId: string; outcome: TaskOutcome }
   | { type: 'free-practice'; date: string; lesson: Lesson; outcome: TaskOutcome }
+  | { type: 'redo-mistake'; date: string; outcome: TaskOutcome }
   | { type: 'review-dictation'; date: string; words: { wordId: string; correct: boolean }[] }
   | { type: 'feed'; date: string; kind: 'food' | 'meal' }
   | { type: 'equip'; slot: string; itemId: string | null }
@@ -149,6 +150,8 @@ export function appReducer(state: SyncState, action: AppAction): SyncState {
 
     case 'free-practice':
       return applyFreePractice(state, action.date, action.lesson, action.outcome);
+    case 'redo-mistake':
+      return applyMistakeRedo(state, action.date, action.outcome);
 
     case 'review-dictation':
       return applyFreeDictation(state, action.date, action.words);

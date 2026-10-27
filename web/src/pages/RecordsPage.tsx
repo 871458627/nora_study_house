@@ -98,8 +98,17 @@ export function RecordsPage() {
       const lesson = lessonById(mistake.lessonId);
       const question = lesson
         ? [...lesson.questions, ...(lesson.afterClass ?? [])].find(item => item.id === mistake.questionId)
-        : undefined;
-      return lesson && question ? { mistake, lesson, question } : null;
+        : mistake.snapshot; // 快照错题（口算等）：题目自带，无所属课
+      const label = lesson
+        ? lesson.title
+        : mistake.snapshot
+          ? '口算'
+          : null;
+      return lesson && question
+        ? { mistake, lesson, question, label, subject: lesson.subject, lessonHref: `/textbook/${lesson.subject}/${lesson.id}` }
+        : mistake.snapshot && question
+          ? { mistake, lesson: null, question, label, subject: 'math' as const, lessonHref: null }
+          : null;
     })
     .filter((item): item is NonNullable<typeof item> => Boolean(item))
     .slice(0, 16);
@@ -351,13 +360,13 @@ export function RecordsPage() {
               </div>
             ) : (
               <div className="mistake-list">
-                {mistakes.map(({ mistake, lesson, question }) => (
+                {mistakes.map(({ mistake, question, label, subject, lessonHref }) => (
                   <div key={mistake.questionId} className="mistake-row">
-                    <SubjectChip subject={lesson.subject} size="small" />
+                    <SubjectChip subject={subject} size="small" />
                     <span className="mistake-copy">
                       <b>{question.stem}</b>
                       <small>
-                        {lesson.title} · {formatMonthDay(mistake.wrongAt)}做错
+                        {label} · {formatMonthDay(mistake.wrongAt)}做错
                       </small>
                     </span>
                     <div className="mistake-actions">
@@ -367,13 +376,15 @@ export function RecordsPage() {
                       >
                         重做
                       </Link>
-                      <Link
-                        to={`/textbook/${lesson.subject}/${lesson.id}`}
-                        className="mistake-lesson"
-                        aria-label={`去看${lesson.title}`}
-                      >
-                        <Icon name="chevron" size={14} />
-                      </Link>
+                      {lessonHref && (
+                        <Link
+                          to={lessonHref}
+                          className="mistake-lesson"
+                          aria-label={`去看${label}`}
+                        >
+                          <Icon name="chevron" size={14} />
+                        </Link>
+                      )}
                     </div>
                   </div>
                 ))}

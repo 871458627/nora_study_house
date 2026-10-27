@@ -39,6 +39,8 @@ function outcomeFor(questions: Question[], responses: ResponseValue[]): TaskOutc
   return {
     correct: result.correct,
     total: result.total,
+    // 口算等即时生成题需要快照才能进错题本（progress.updateMistakes 按此落库）
+    questions,
     weakness: result.weakness,
     wrongQuestionIds: result.wrongQuestionIds,
     correctQuestionIds: result.answers

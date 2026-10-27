@@ -1,12 +1,12 @@
 import { DEFAULT_PET_ID, PET_BY_ID } from '../data/pets';
 import { DEFAULT_SETTINGS, DEFAULT_TIMETABLE } from '../data/defaults';
 import { SPORTS_MAX_CUSTOM_ITEMS, type SportsItem } from '../data/sports';
-import type {
+import type { Question,
   Lesson,
   PlanTask,
   SubjectId,
   Timetable,
-} from '../data/types';
+ } from '../data/types';
 import { isValidDateKey } from './date';
 import type { ArchivedTotals } from './archive';
 
@@ -34,6 +34,8 @@ export interface Mistake {
   lessonId: string;
   wrongAt: string;
   resolvedAt?: string;
+  /** 非课本题（口算等即时生成题）的题目快照：重做页直接使用，不依赖课内容查找 */
+  snapshot?: Question;
 }
 
 export interface WeaknessEntry {
@@ -167,6 +169,8 @@ export interface SyncState {
 export interface TaskOutcome {
   correct: number;
   total: number;
+  /** 会话内全部题目（口算等即时生成题进错题本快照用；课本题可省略） */
+  questions?: Question[];
   weakness: { pointId: string; correct: boolean }[];
   wrongQuestionIds: string[];
   correctQuestionIds?: string[];
@@ -479,13 +483,17 @@ export function normalizeState(value: unknown): SyncState | null {
       lastWrongAt: typeof raw.lastWrongAt === 'string' ? raw.lastWrongAt : undefined,
     };
   }
+  // 课本错题：lessonId 必须能定位课；快照错题（口算等即时生成题）：lessonId 可空、必须带完整快照
   const mistakes = Array.isArray(value.mistakes)
     ? value.mistakes.filter((item): item is Mistake => {
+        if (!isRecord(item) || typeof item.questionId !== 'string' || typeof item.wrongAt !== 'string') {
+          return false;
+        }
+        const hasLesson = typeof item.lessonId === 'string' && item.lessonId.length > 0;
+        if (hasLesson) return true;
         return (
-          isRecord(item) &&
-          typeof item.questionId === 'string' &&
-          typeof item.lessonId === 'string' &&
-          typeof item.wrongAt === 'string'
+          isRecord(item.snapshot) &&
+          typeof (item.snapshot as { stem?: unknown }).stem === 'string'
         );
       })
     : [];
