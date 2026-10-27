@@ -38,10 +38,12 @@ class FakeUtterance {
   }
 }
 
-type SpeakMode = 'dead' | 'alive';
+type SpeakMode = 'dead' | 'alive' | 'drop-first';
 let speakMode: SpeakMode = 'dead';
+let realSpeakCount = 0;
 
 function installSpeechMock(): void {
+  realSpeakCount = 0;
   const synth = {
     speaking: false,
     pending: false,
@@ -54,11 +56,12 @@ function installSpeechMock(): void {
     removeEventListener: () => {},
     cancel: () => {},
     speak: (utterance: FakeUtterance) => {
-      if (speakMode === 'alive') {
-        window.setTimeout(() => utterance.emit('start'), 100);
-        window.setTimeout(() => utterance.emit('end'), 800);
-      }
-      // dead 模式：入队后永不触发 start/end/error（无网在线语音的挂起表现）。
+      if (utterance.text === ' ') return; // 引擎踢脚的静音空段不计时
+      realSpeakCount += 1;
+      if (speakMode === 'dead') return;
+      if (speakMode === 'drop-first' && realSpeakCount === 1) return; // 首段被吞（Chrome/Android 偶发）
+      window.setTimeout(() => utterance.emit('start'), 100);
+      window.setTimeout(() => utterance.emit('end'), 800);
     },
   };
   (window as unknown as { speechSynthesis: unknown }).speechSynthesis = synth;
@@ -121,11 +124,16 @@ describe('单词点读失败链路（docs/06 §3.12 验收④：绝无「点了�
 
     expect(screen.getAllByText('听短句')).toHaveLength(6);
 
-    // 第一次点击：立即有「朗读中」反馈，2.5s 看门狗判失败后行内提示。
+    // 第一次点击：立即有「朗读中」反馈；第一肢 2.5s 没 start → 自动重试，仍不出声才判失败。
     fireEvent.click(screen.getAllByText('听短句')[0]!);
     expect(screen.getAllByText('朗读中…')).toHaveLength(1);
     act(() => {
       vi.advanceTimersByTime(2600);
+    });
+    expect(screen.getAllByText('朗读中…')).toHaveLength(1);
+    expect(screen.queryByText('这次没能读出来，再点一下试试。')).not.toBeInTheDocument();
+    act(() => {
+      vi.advanceTimersByTime(2200); // 重试肢 1.8s 也没 start
     });
     expect(screen.getByText('这次没能读出来，再点一下试试。')).toBeInTheDocument();
     expect(screen.queryByText('朗读中…')).not.toBeInTheDocument();
@@ -140,7 +148,7 @@ describe('单词点读失败链路（docs/06 §3.12 验收④：绝无「点了�
 
     // 第二次失败：整段收起按钮，退回「看中文意思」的静态模式。
     act(() => {
-      vi.advanceTimersByTime(2400);
+      vi.advanceTimersByTime(4600);
     });
     expect(screen.queryByText('听短句')).not.toBeInTheDocument();
     expect(screen.queryByText('朗读中…')).not.toBeInTheDocument();
@@ -174,6 +182,29 @@ describe('单词点读失败链路（docs/06 §3.12 验收④：绝无「点了�
     // start 已清掉看门狗：再过 3s 也不许出现失败提示。
     act(() => {
       vi.advanceTimersByTime(3000);
+    });
+    expect(screen.queryByText('这次没能读出来，再点一下试试。')).not.toBeInTheDocument();
+    expect(screen.queryByText(/没有发出声音/)).not.toBeInTheDocument();
+  });
+
+  it('start 迟到时自动重试一次：第二肢出声即恢复，不报失败（docs/06 §3.3）', () => {
+    speakMode = 'drop-first';
+    vi.useFakeTimers();
+    renderLesson('/textbook/english/en-u1-l1');
+
+    fireEvent.click(screen.getAllByText('听短句')[0]!);
+    act(() => {
+      vi.advanceTimersByTime(2600); // 第一肢超时 → 重试肢已启动并出声（start +100ms）
+    });
+    expect(screen.getAllByText('朗读中…')).toHaveLength(1);
+    act(() => {
+      vi.advanceTimersByTime(1000); // 第二肢 end（+800ms）
+    });
+    expect(screen.queryByText('朗读中…')).not.toBeInTheDocument();
+    expect(screen.getAllByText('听短句')).toHaveLength(6);
+
+    act(() => {
+      vi.advanceTimersByTime(4000); // 之后的任何看门狗都不许再触发失败
     });
     expect(screen.queryByText('这次没能读出来，再点一下试试。')).not.toBeInTheDocument();
     expect(screen.queryByText(/没有发出声音/)).not.toBeInTheDocument();

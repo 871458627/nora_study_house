@@ -34,6 +34,14 @@ describe('pickVoice（朗读语音挑选）', () => {
     expect(pickVoice([voice('en_US')], 'en-US')?.lang).toBe('en_US');
     expect(pickVoice([voice('en-US')], 'en_US')?.lang).toBe('en-US');
   });
+
+  it('Android 宏语言码 cmn-Hans-CN 视作普通话（zh）', () => {
+    const cmn = voice('cmn-Hans-CN');
+    expect(pickVoice([cmn], 'zh-CN')?.lang).toBe('cmn-Hans-CN');
+    expect(voiceAvailable([cmn], 'zh-CN', true)).toBe(true);
+    // 粤语 yue 不冒充普通话：宁可走拼音降级也不要粤语念课文
+    expect(voiceAvailable([voice('yue-Hant-HK')], 'zh-CN', true)).toBe(false);
+  });
 });
 
 describe('voiceAvailable（语音可用性判定）', () => {

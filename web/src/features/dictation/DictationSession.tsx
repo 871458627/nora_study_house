@@ -40,6 +40,9 @@ export function DictationSession({
   const [dictationMode, setDictationMode] = useState<DictationMode>(preferredMode);
   const [selected, setSelected] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
+  // 语音启动失败计数（重试后仍失败才计入）：连续两次判定设备发不出声，
+  // 整页退回拼音降级，避免喇叭摆着但每次都无声。点「再试一次」可重新探测。
+  const [speechFailCount, setSpeechFailCount] = useState(0);
   const [record, setRecord] = useState<{ wordId: string; correct: boolean; mode: DictationMode }[]>(
     [],
   );
@@ -79,6 +82,7 @@ export function DictationSession({
 
   const word = words[index];
   const canSpeak = supported && hasVoice('zh-CN');
+  const voiceDead = !canSpeak || speechFailCount >= 2;
   const revealed = selected !== null;
   const correct = revealed && selected === word?.word;
 
@@ -133,7 +137,7 @@ export function DictationSession({
   useEffect(() => {
     if (!autoSpeak || !canSpeak || finished || revealed || !word) return;
     const timer = window.setTimeout(() => {
-      speak(word.word, 'zh-CN', 0.82);
+      speak(word.word, 'zh-CN', 0.82, () => setSpeechFailCount(count => count + 1));
     }, 220);
     return () => window.clearTimeout(timer);
   }, [autoSpeak, canSpeak, finished, revealed, speak, word]);
@@ -341,14 +345,31 @@ export function DictationSession({
         </div>
 
         <section className="dictation-card card">
-          {canSpeak ? (
+          {voiceDead ? (
+            <div className="listen-area fallback">
+              <span className="fallback-icon">
+                <Icon name="wifi-off" size={24} />
+              </span>
+              <b>这台设备暂时不能朗读</b>
+              <small>没关系，看拼音来完成听写。</small>
+              {canSpeak && (
+                <button
+                  type="button"
+                  className="text-link speak-retry"
+                  onClick={() => setSpeechFailCount(0)}
+                >
+                  再试一次
+                </button>
+              )}
+            </div>
+          ) : (
             <div className="listen-area">
               <div className="speaker-wrap">
                 <button
                   type="button"
                   className="speaker-button"
                   aria-label="再听一遍"
-                  onClick={() => speak(word.word, 'zh-CN', 0.82)}
+                  onClick={() => speak(word.word, 'zh-CN', 0.82, () => setSpeechFailCount(count => count + 1))}
                 >
                   <Icon name="speaker" size={32} />
                 </button>
@@ -360,28 +381,18 @@ export function DictationSession({
               <button
                 type="button"
                 className="slow-link"
-                onClick={() => speak(word.word, 'zh-CN', 0.6)}
+                onClick={() => speak(word.word, 'zh-CN', 0.6, () => setSpeechFailCount(count => count + 1))}
               >
                 慢速再听一遍
               </button>
             </div>
-          ) : (
-            <div className="listen-area fallback">
-              <span className="fallback-icon">
-                <Icon name="wifi-off" size={24} />
-              </span>
-              <b>这台设备暂时不能朗读</b>
-              <small>没关系，看拼音来完成听写。</small>
-            </div>
           )}
 
-          {dictationMode === 'handwrite' && !revealed ? null : (
-            (!canSpeak || dictationMode === 'type' || revealed) && (
-              <div className="pinyin-prompt">
-                <span>拼音</span>
-                <b>{word.pinyin}</b>
-              </div>
-            )
+          {!revealed && canSpeak && !voiceDead && dictationMode !== 'type' ? null : (
+            <div className="pinyin-prompt">
+              <span>拼音</span>
+              <b>{word.pinyin}</b>
+            </div>
           )}
 
           {dictationMode === 'choice' ? (
