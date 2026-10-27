@@ -11,14 +11,14 @@ import {
 } from './builders';
 
 export const chineseUnits: Unit[] = [
-  { id: 'cn-u1', subject: 'chinese', order: 1, title: '第一单元 · 课文' },
+  { id: 'cn-u1', subject: 'chinese', order: 1, title: '第一单元 · 阅读' },
   { id: 'cn-u2', subject: 'chinese', order: 2, title: '第二单元 · 识字' },
-  { id: 'cn-u3', subject: 'chinese', order: 3, title: '第三单元 · 课文' },
-  { id: 'cn-u4', subject: 'chinese', order: 4, title: '第四单元 · 课文' },
-  { id: 'cn-u5', subject: 'chinese', order: 5, title: '第五单元 · 课文' },
-  { id: 'cn-u6', subject: 'chinese', order: 6, title: '第六单元 · 课文' },
-  { id: 'cn-u7', subject: 'chinese', order: 7, title: '第七单元 · 课文' },
-  { id: 'cn-u8', subject: 'chinese', order: 8, title: '第八单元 · 课文' },
+  { id: 'cn-u3', subject: 'chinese', order: 3, title: '第三单元 · 阅读' },
+  { id: 'cn-u4', subject: 'chinese', order: 4, title: '第四单元 · 阅读' },
+  { id: 'cn-u5', subject: 'chinese', order: 5, title: '第五单元 · 阅读' },
+  { id: 'cn-u6', subject: 'chinese', order: 6, title: '第六单元 · 阅读' },
+  { id: 'cn-u7', subject: 'chinese', order: 7, title: '第七单元 · 阅读' },
+  { id: 'cn-u8', subject: 'chinese', order: 8, title: '第八单元 · 阅读' },
 ];
 
 const d = (lesson: string, word: string, pinyin: string) =>
@@ -115,56 +115,43 @@ const seeds: LessonSeed[] = [
     dictation: [d('u2l4', '四季', 'sì jì'), d('u2l4', '农事', 'nóng shì'), d('u2l4', '月光', 'yuè guāng'), d('u2l4', '辛苦', 'xīn kǔ'), d('u2l4', '棉衣', 'mián yī')],
   },
   {
-    id: 'cn-u3-l1', unitId: 'cn-u3', order: 8, category: 'text', textbookNo: 4, title: '曹冲称象',
-    preview: ['曹冲七岁，想出了称象的好办法。', '把大象赶上船，画下水面到船身的位置。'],
-    review: ['大象下船后往船上装石头，装到画线处。', '石头有多重，大象就有多重，这叫等量替换。'],
-    tip: '用“先……再……最后……”讲一讲曹冲的办法。',
+    id: 'cn-u3-l1', unitId: 'cn-u3', order: 8, category: 'text', textbookNo: 4, title: '彩虹',
+    preview: ['雨停了，天上出现了一座美丽的桥。', '我想到彩虹桥上，帮爸爸浇花、帮妈妈照镜子。'],
+    review: ['我把哥哥的秋千挂到彩虹上，荡来荡去，花裙子飘成彩云。', '课文用一连串的想象，把彩虹写成了游乐的桥。'],
+    tip: '朗读课文，说说“我”想在彩虹上做些什么。',
     questions: [
-      order('给曹冲称象的步骤排序。', ['大象上船画线', '大象下船', '往船上装石头', '称石头'], '装到同样的水位，石头的重量就是大象的重量。'),
-      choice('曹冲的办法好在哪里？', ['用石头代替大象称重', '把大象砍成几块', '砍大树做秤', '请大象自己称'], 0),
-      truefalse('官员们想出的办法都成功了。', false, '砍树做秤、割象都不行。'),
+      choice('“我”想提着爸爸的水壶到桥上做什么？', ['把水洒下来，当作下雨', '浇楼下的花', '洗彩虹', '装满水壶'], 0),
+      order('“我”的三个想象分别用到了什么？', ['水壶', '镜子', '秋千', '花裙子']),
+      truefalse('彩虹真的可以挂秋千。', false, '这是“我”天真的想象。'),
     ],
-    dictation: [d('u3l1', '柱子', 'zhù zi'), d('u3l1', '到底', 'dào dǐ'), d('u3l1', '秤杆', 'chèng gǎn'), d('u3l1', '船身', 'chuán shēn'), d('u3l1', '果然', 'guǒ rán')],
+    dictation: [d('u3l1', '彩虹', 'cǎi hóng'), d('u3l1', '水壶', 'shuǐ hú'), d('u3l1', '镜子', 'jìng zi'), d('u3l1', '秋千', 'qiū qiān'), d('u3l1', '裙子', 'qún zi')],
   },
   {
-    id: 'cn-u3-l2', unitId: 'cn-u3', order: 9, category: 'text', textbookNo: 5, title: '玲玲的画',
-    preview: ['玲玲的画要参加评奖，却不小心把画弄脏了。', '爸爸让她在弄脏的地方画点儿什么。'],
-    review: ['玲玲画了一只小花狗，第二天评奖得了一等奖。', '只要肯动脑筋，坏事也能变成好事。'],
+    id: 'cn-u3-l2', unitId: 'cn-u3', order: 9, category: 'text', textbookNo: 5, title: '去外婆家',
+    preview: ['小时候，我最大的乐趣就是去外婆家。', '外婆家在山脚下，山上山下宝贝多。'],
+    review: ['舅舅从山上带回山楂、柿子和毛栗子，小山雀围着我蹦跳鸣叫。', '春天满山杜鹃花，外婆采野花别在我衣服上。'],
+    tip: '朗读课文，说说外婆家的山上有哪些“宝贝”。',
     questions: [
-      choice('玲玲在弄脏的地方画了什么？', ['一只小花狗', '小猫', '小兔', '房子'], 0),
-      truefalse('遇到问题只要哭就能解决。', false, '动脑筋想办法才是好办法。'),
-      order('故事是怎样发展的？', ['画弄脏了', '爸爸提醒画点东西', '画上小花狗', '评奖得了一等奖']),
+      choice('舅舅从山上干活回来会带什么？', ['山楂、柿子或毛栗子', '苹果和香蕉', '玩具', '新衣服'], 0),
+      truefalse('林间的小山雀是外婆从小喂大的，见了“我”也不逃。', true),
+      order('课文写了外婆家的哪些宝贝？', ['吃的', '玩的', '看的']),
     ],
-    dictation: [d('u3l2', '评奖', 'píng jiǎng'), d('u3l2', '时间', 'shí jiān'), d('u3l2', '报纸', 'bào zhǐ'), d('u3l2', '来不及', 'lái bu jí'), d('u3l2', '坏事', 'huài shì')],
+    dictation: [d('u3l2', '外婆', 'wài pó'), d('u3l2', '山脚', 'shān jiǎo'), d('u3l2', '山楂', 'shān zhā'), d('u3l2', '柿子', 'shì zi'), d('u3l2', '杜鹃花', 'dù juān huā')],
   },
   {
-    id: 'cn-u3-l3', unitId: 'cn-u3', order: 10, category: 'text', textbookNo: 6, title: '一封信',
-    preview: ['露西给出国了的爸爸写信，第一封写得冷冷清清。', '妈妈引导她重写一封，写点开心的事。'],
-    review: ['第二封信写了台灯修好了、要去看电影等开心事。', '同一件事，换个角度写，心情会不一样。'],
+    id: 'cn-u3-l3', unitId: 'cn-u3', order: 10, category: 'text', textbookNo: 6, title: '数星星的孩子',
+    preview: ['晚上，满天的星星像无数珍珠撒在碧玉盘里。', '一个孩子靠着奶奶，仰起头，指着天空数星星。'],
+    review: ['爷爷告诉他北斗七星像一把勺子，总是绕着北极星转。', '这个孩子叫张衡，长大后刻苦钻研天文，成了著名的天文学家。'],
+    tip: '朗读课文，说说张衡小时候是怎样数星星的。',
     questions: [
-      choice('露西为什么重新写信？', ['妈妈建议写开心的事', '爸爸不喜欢她', '信纸用完了', '她想睡觉'], 0),
-      truefalse('露西的第二封信写得更开心。', true),
-      match('把信和内容连起来。', [
-        { left: '第一封信', right: '家里冷冷清清' }, { left: '第二封信', right: '台灯修好了，要去看电影' },
-      ]),
+      choice('数星星的孩子名叫什么？', ['张衡', '李时珍', '司马光', '曹冲'], 0),
+      truefalse('北斗七星总是绕着北极星转。', true),
+      order('爷爷教“我”认识了什么？', ['北斗七星', '北极星', '勺子形状', '绕着转']),
     ],
-    dictation: [d('u3l3', '出国', 'chū guó'), d('u3l3', '圆珠笔', 'yuán zhū bǐ'), d('u3l3', '台灯', 'tái dēng'), d('u3l3', '电影', 'diàn yǐng'), d('u3l3', '开心', 'kāi xīn')],
+    dictation: [d('u3l3', '珍珠', 'zhēn zhū'), d('u3l3', '北斗七星', 'běi dǒu qī xīng'), d('u3l3', '钻研', 'zuān yán'), d('u3l3', '著名', 'zhù míng'), d('u3l3', '距离', 'jù lí')],
   },
   {
-    id: 'cn-u3-l4', unitId: 'cn-u3', order: 11, category: 'text', textbookNo: 7, title: '妈妈睡了',
-    preview: ['睡梦中的妈妈真美丽。', '妈妈好温柔，也好累。'],
-    review: ['课文写了妈妈“美丽、温柔、好累”三个样子。', '“明亮的眼睛、弯弯的眉毛、红润的脸”写出妈妈的美丽。'],
-    questions: [
-      match('把词语和描写连起来。', [
-        { left: '明亮的', right: '眼睛' }, { left: '弯弯的', right: '眉毛' }, { left: '红润的', right: '脸' },
-      ]),
-      truefalse('课文写出了孩子对妈妈的爱。', true),
-      choice('妈妈为什么好累？', ['工作、照顾家人很辛苦', '睡得太久', '生病了', '不想说话'], 0),
-    ],
-    dictation: [d('u3l4', '明亮', 'míng liàng'), d('u3l4', '故事', 'gù shi'), d('u3l4', '头发', 'tóu fa'), d('u3l4', '窗外', 'chuāng wài')],
-  },
-  {
-    id: 'cn-u4-l1', unitId: 'cn-u4', order: 12, category: 'text', textbookNo: 8, title: '古诗二首',
+    id: 'cn-u4-l1', unitId: 'cn-u4', order: 11, category: 'text', textbookNo: 7, title: '古诗二首',
     preview: ['《登鹳雀楼》告诉我们站得高，看得远。', '《望庐山瀑布》写了瀑布从高处落下的样子。'],
     review: ['“欲穷千里目，更上一层楼”鼓励人不断进步。', '“飞流直下三千尺，疑是银河落九天”用了夸张。'],
     questions: [
@@ -177,7 +164,7 @@ const seeds: LessonSeed[] = [
     dictation: [],
   },
   {
-    id: 'cn-u4-l2', unitId: 'cn-u4', order: 13, category: 'text', textbookNo: 9, title: '黄山奇石',
+    id: 'cn-u4-l2', unitId: 'cn-u4', order: 12, category: 'text', textbookNo: 8, title: '黄山奇石',
     preview: ['黄山在我国安徽省。', '课文写了仙桃石、猴子观海、仙人指路、金鸡叫天都。'],
     review: ['作者用“好像、每当、这就是”等词把石头写得很生动。', '黄山石头的特点是奇形怪状。'],
     questions: [
@@ -190,7 +177,7 @@ const seeds: LessonSeed[] = [
     dictation: [d('u4l2', '黄山', 'huáng shān'), d('u4l2', '山顶', 'shān dǐng'), d('u4l2', '云海', 'yún hǎi'), d('u4l2', '巨石', 'jù shí'), d('u4l2', '金光闪闪', 'jīn guāng shǎn shǎn')],
   },
   {
-    id: 'cn-u4-l3', unitId: 'cn-u4', order: 14, category: 'text', textbookNo: 10, title: '日月潭',
+    id: 'cn-u4-l3', unitId: 'cn-u4', order: 13, category: 'text', textbookNo: 9, title: '日月潭',
     preview: ['日月潭在台湾。', '湖中间的光华岛把湖分成日潭和月潭。'],
     review: ['清晨日月潭隐隐约约，中午清晰，雨天像仙境。', '课文按不同时间写日月潭的景色。'],
     questions: [
@@ -203,7 +190,7 @@ const seeds: LessonSeed[] = [
     dictation: [d('u4l3', '群山', 'qún shān'), d('u4l3', '名胜古迹', 'míng shèng gǔ jì'), d('u4l3', '中央', 'zhōng yāng'), d('u4l3', '美丽', 'měi lì'), d('u4l3', '风光', 'fēng guāng')],
   },
   {
-    id: 'cn-u4-l4', unitId: 'cn-u4', order: 15, category: 'text', textbookNo: 11, title: '葡萄沟',
+    id: 'cn-u4-l4', unitId: 'cn-u4', order: 14, category: 'text', textbookNo: 10, title: '葡萄沟',
     preview: ['葡萄沟在新疆吐鲁番。', '那里盛产水果，葡萄最有名。'],
     review: ['葡萄五光十色，老乡热情好客。', '课文表达了对葡萄沟的喜爱。'],
     questions: [
@@ -214,7 +201,7 @@ const seeds: LessonSeed[] = [
     dictation: [d('u4l4', '出产', 'chū chǎn'), d('u4l4', '水果', 'shuǐ guǒ'), d('u4l4', '山坡', 'shān pō'), d('u4l4', '五光十色', 'wǔ guāng shí sè'), d('u4l4', '好客', 'hào kè')],
   },
   {
-    id: 'cn-u5-l1', unitId: 'cn-u5', order: 16, category: 'text', textbookNo: 12, title: '坐井观天',
+    id: 'cn-u5-l1', unitId: 'cn-u5', order: 15, category: 'text', textbookNo: 11, title: '坐井观天',
     preview: ['青蛙坐在井里，认为天只有井口那么大。', '小鸟说天无边无际。'],
     review: ['“坐井观天”比喻目光短浅、见识少。', '课文通过青蛙和小鸟的三次对话展开。'],
     questions: [
@@ -225,7 +212,7 @@ const seeds: LessonSeed[] = [
     dictation: [d('u5l1', '坐井观天', 'zuò jǐng guān tiān'), d('u5l1', '井沿', 'jǐng yán'), d('u5l1', '口渴', 'kǒu kě'), d('u5l1', '无边无际', 'wú biān wú jì'), d('u5l1', '大话', 'dà huà')],
   },
   {
-    id: 'cn-u5-l2', unitId: 'cn-u5', order: 17, category: 'text', textbookNo: 13, title: '寒号鸟',
+    id: 'cn-u5-l2', unitId: 'cn-u5', order: 16, category: 'text', textbookNo: 12, title: '寒号鸟',
     preview: ['喜鹊勤劳，寒号鸟懒惰。', '冬天到了，寒号鸟没有窝。'],
     review: ['寒号鸟总说“得过且过”，最后冻死了。', '课文告诉我们做事要及早准备。'],
     questions: [
@@ -238,7 +225,7 @@ const seeds: LessonSeed[] = [
     dictation: [d('u5l2', '山脚', 'shān jiǎo'), d('u5l2', '晴朗', 'qíng lǎng'), d('u5l2', '清早', 'qīng zǎo'), d('u5l2', '将来', 'jiāng lái'), d('u5l2', '难过', 'nán guò')],
   },
   {
-    id: 'cn-u5-l3', unitId: 'cn-u5', order: 18, category: 'text', textbookNo: 14, title: '我要的是葫芦',
+    id: 'cn-u5-l3', unitId: 'cn-u5', order: 17, category: 'text', textbookNo: 13, title: '我要的是葫芦',
     preview: ['种葫芦的人只要葫芦，不管叶子。', '叶子上长了蚜虫，他不听劝。'],
     review: ['蚜虫吃叶子，叶子坏了，葫芦也落了。', '事物之间是有联系的。'],
     questions: [
@@ -249,7 +236,7 @@ const seeds: LessonSeed[] = [
     dictation: [d('u5l3', '从前', 'cóng qián'), d('u5l3', '细长', 'xì cháng'), d('u5l3', '自言自语', 'zì yán zì yǔ'), d('u5l3', '邻居', 'lín jū'), d('u5l3', '奇怪', 'qí guài')],
   },
   {
-    id: 'cn-u6-l1', unitId: 'cn-u6', order: 19, category: 'text', textbookNo: 15, title: '八角楼上',
+    id: 'cn-u6-l1', unitId: 'cn-u6', order: 18, category: 'text', textbookNo: 14, title: '八角楼上',
     preview: ['井冈山斗争的年代，毛主席住在茅坪村的八角楼。', '每当夜幕降临，八角楼上的灯就亮了。'],
     review: ['寒冬腊月的深夜，毛主席在清油灯下写文章，凝视着星星之火。', '他写下了许多光辉著作，照亮了中国革命胜利的道路。'],
     tip: '朗读课文，说说毛主席是怎样工作的。',
@@ -261,7 +248,7 @@ const seeds: LessonSeed[] = [
     dictation: [d('u6l1', '八角楼', 'bā jiǎo lóu'), d('u6l1', '深夜', 'shēn yè'), d('u6l1', '星星之火', 'xīng xīng zhī huǒ'), d('u6l1', '沉思', 'chén sī'), d('u6l1', '胜利', 'shèng lì')],
   },
   {
-    id: 'cn-u6-l2', unitId: 'cn-u6', order: 20, category: 'text', textbookNo: 16, title: '朱德的扁担',
+    id: 'cn-u6-l2', unitId: 'cn-u6', order: 19, category: 'text', textbookNo: 15, title: '朱德的扁担',
     preview: ['井冈山上粮食不多，朱德和战士们一起挑粮。', '大家把扁担藏起来，朱德又找来一根。'],
     review: ['朱德在扁担上写了“朱德的扁担”。', '课文表现了朱德以身作则、与战士同甘共苦。'],
     questions: [
@@ -274,7 +261,7 @@ const seeds: LessonSeed[] = [
     dictation: [d('u6l2', '扁担', 'biǎn dan'), d('u6l2', '同志', 'tóng zhì'), d('u6l2', '带领', 'dài lǐng'), d('u6l2', '队伍', 'duì wu'), d('u6l2', '红军', 'hóng jūn')],
   },
   {
-    id: 'cn-u6-l3', unitId: 'cn-u6', order: 21, category: 'text', textbookNo: 17, title: '难忘的泼水节',
+    id: 'cn-u6-l3', unitId: 'cn-u6', order: 20, category: 'text', textbookNo: 16, title: '难忘的泼水节',
     preview: ['1961年，周总理和傣族人民一起过泼水节。', '泼水节是傣族最盛大的节日。'],
     review: ['课文写了周总理的穿着、动作和笑容。', '凤凰花开了，傣族人民欢迎周总理。'],
     questions: [
@@ -287,7 +274,7 @@ const seeds: LessonSeed[] = [
     dictation: [d('u6l3', '难忘', 'nán wàng'), d('u6l3', '泼水节', 'pō shuǐ jié'), d('u6l3', '一年一度', 'yī nián yī dù'), d('u6l3', '四面八方', 'sì miàn bā fāng'), d('u6l3', '人群', 'rén qún')],
   },
   {
-    id: 'cn-u6-l4', unitId: 'cn-u6', order: 22, category: 'text', textbookNo: 18, title: '刘胡兰',
+    id: 'cn-u6-l4', unitId: 'cn-u6', order: 21, category: 'text', textbookNo: 17, title: '刘胡兰',
     preview: ['1947 年，年轻的共产党员刘胡兰被敌人逮捕。', '面对收买和威胁，她一点儿也不动摇。'],
     review: ['敌人当着她的面铡死了六个民兵，她挺起胸膛走到铡刀前。', '刘胡兰光荣地牺牲了，毛主席亲笔为她写了挽词。'],
     tip: '朗读课文，说说从哪些地方可以看出刘胡兰在敌人面前毫不屈服。',
@@ -299,20 +286,20 @@ const seeds: LessonSeed[] = [
     dictation: [d('u6l4', '年轻', 'nián qīng'), d('u6l4', '村子', 'cūn zi'), d('u6l4', '广场', 'guǎng chǎng'), d('u6l4', '民兵', 'mín bīng'), d('u6l4', '知道', 'zhī dào')],
   },
   {
-    id: 'cn-u7-l1', unitId: 'cn-u7', order: 23, category: 'text', textbookNo: 19, title: '古诗二首',
-    preview: ['《夜宿山寺》写山寺很高。', '《敕勒歌》写草原辽阔。'],
-    review: ['“手可摘星辰”用夸张写楼高。', '“天苍苍，野茫茫，风吹草低见牛羊”写草原景象。'],
+    id: 'cn-u7-l1', unitId: 'cn-u7', order: 22, category: 'text', textbookNo: 18, title: '古诗二首',
+    preview: ['《江雪》写大雪中江面孤舟独钓的清冷。', '《敕勒歌》写草原辽阔。'],
+    review: ['“孤舟蓑笠翁，独钓寒江雪”画出安静的雪景。', '“天苍苍，野茫茫，风吹草低见牛羊”写草原景象。'],
     questions: [
-      choice('“危楼高百尺”中的“危”是什么意思？', ['高', '危险', '破旧', '寒冷'], 0),
+      choice('《江雪》里老翁在寒江上做什么？', ['独自钓鱼', '划船比赛', '看风景', '打鱼卖钱'], 0),
       match('把诗句和题目连起来。', [
-        { left: '手可摘星辰', right: '夜宿山寺' }, { left: '风吹草低见牛羊', right: '敕勒歌' },
+        { left: '孤舟蓑笠翁', right: '江雪' }, { left: '风吹草低见牛羊', right: '敕勒歌' },
       ]),
       truefalse('《敕勒歌》写的是草原风光。', true),
     ],
     dictation: [],
   },
   {
-    id: 'cn-u7-l2', unitId: 'cn-u7', order: 24, category: 'text', textbookNo: 20, title: '雾在哪里',
+    id: 'cn-u7-l2', unitId: 'cn-u7', order: 23, category: 'text', textbookNo: 19, title: '雾在哪里',
     preview: ['雾把大海、天空、太阳、房屋藏起来。', '雾是个淘气的孩子。'],
     review: ['课文用“藏”写雾的变化。', '雾散了，一切又露出来。'],
     questions: [
@@ -323,7 +310,7 @@ const seeds: LessonSeed[] = [
     dictation: [d('u7l2', '于是', 'yú shì'), d('u7l2', '岸边', 'àn biān'), d('u7l2', '房屋', 'fáng wū'), d('u7l2', '散步', 'sàn bù'), d('u7l2', '出现', 'chū xiàn')],
   },
   {
-    id: 'cn-u7-l3', unitId: 'cn-u7', order: 25, category: 'text', textbookNo: 21, title: '雪孩子',
+    id: 'cn-u7-l3', unitId: 'cn-u7', order: 24, category: 'text', textbookNo: 20, title: '雪孩子',
     preview: ['雪孩子陪小白兔玩，救了大火中的小白兔。', '雪孩子化成水，变成云。'],
     review: ['雪孩子勇敢、善良。', '课文按“堆雪人—着火—救人—化云”的顺序写。'],
     questions: [
@@ -334,20 +321,19 @@ const seeds: LessonSeed[] = [
     dictation: [d('u7l3', '空地', 'kòng dì'), d('u7l3', '唱歌', 'chàng gē'), d('u7l3', '赶快', 'gǎn kuài'), d('u7l3', '火星', 'huǒ xīng'), d('u7l3', '水汽', 'shuǐ qì')],
   },
   {
-    id: 'cn-u8-l1', unitId: 'cn-u8', order: 26, category: 'text', textbookNo: 22, title: '狐假虎威',
-    preview: ['狐狸被老虎抓住，说自己是老天爷派来的。', '狐狸带老虎在百兽面前走，吓跑了大家。'],
-    review: ['“狐假虎威”比喻借别人的威风吓唬人。', '狐狸神气活现，老虎半信半疑。'],
+    id: 'cn-u8-l1', unitId: 'cn-u8', order: 25, category: 'text', textbookNo: 21, title: '称赞',
+    preview: ['小獾学做木工，做的小板凳有点粗糙。', '小刺猬称赞他：小板凳做得一个比一个好！'],
+    review: ['小獾把苹果送给小刺猬，称赞苹果又香又甜。', '真诚的称赞能带给人自信和快乐。'],
+    tip: '分角色朗读课文，说说称赞带来了什么。',
     questions: [
-      choice('“狐假虎威”是什么意思？', ['借别人的威风吓唬人', '狐狸怕老虎', '老虎很威风', '狐狸很聪明'], 0),
-      match('把词语和意思连起来。', [
-        { left: '神气活现', right: '很得意' }, { left: '半信半疑', right: '有点信又有点疑' },
-      ]),
-      truefalse('百兽是被狐狸吓跑的。', false, '百兽真正怕的是老虎。'),
+      choice('小刺猬是怎样称赞小獾的？', ['小板凳做得一个比一个好', '板凳做得最精致', '木工手艺最好', '学得最快'], 0),
+      truefalse('称赞能带给人自信和快乐。', true),
+      order('故事是怎样发展的？', ['小獾做板凳', '小刺猬称赞', '送苹果', '小獾称赞苹果']),
     ],
-    dictation: [d('u8l1', '食物', 'shí wù'), d('u8l1', '爪子', 'zhǎo zi'), d('u8l1', '神气活现', 'shén qì huó xiàn'), d('u8l1', '野猪', 'yě zhū'), d('u8l1', '信以为真', 'xìn yǐ wéi zhēn')],
+    dictation: [d('u8l1', '称赞', 'chēng zàn'), d('u8l1', '板凳', 'bǎn dèng'), d('u8l1', '苹果', 'píng guǒ'), d('u8l1', '自信', 'zì xìn'), d('u8l1', '疲劳', 'pí láo')],
   },
   {
-    id: 'cn-u8-l3', unitId: 'cn-u8', order: 27, category: 'text', textbookNo: 23, title: '纸船和风筝',
+    id: 'cn-u8-l3', unitId: 'cn-u8', order: 26, category: 'text', textbookNo: 22, title: '纸船和风筝',
     preview: ['松鼠和小熊住在山顶和山脚。', '他们用纸船和风筝成为好朋友。'],
     review: ['吵架后，他们都不好意思先开口。', '最后纸船和风筝让他们和好了。'],
     questions: [
@@ -358,17 +344,16 @@ const seeds: LessonSeed[] = [
     dictation: [d('u8l3', '纸船', 'zhǐ chuán'), d('u8l3', '松果', 'sōng guǒ'), d('u8l3', '纸条', 'zhǐ tiáo'), d('u8l3', '屋顶', 'wū dǐng'), d('u8l3', '和好', 'hé hǎo')],
   },
   {
-    id: 'cn-u8-l4', unitId: 'cn-u8', order: 28, category: 'text', textbookNo: 24, title: '风娃娃',
-    preview: ['风娃娃想帮人们做好事。', '他吹动风车、帆船，帮了忙。'],
-    review: ['风娃娃吹跑风筝、衣服，吹断小树，做了坏事。', '做好事要看是不是真的对别人有帮助。'],
+    id: 'cn-u8-l5', unitId: 'cn-u8', order: 27, category: 'text', textbookNo: 23, title: '快乐的小河',
+    preview: ['一条小河匆忙赶路，迎面撞在大山上，疼得哭了起来。', '大山慈祥地开导他：不平静的水才有力量。'],
+    review: ['小河邀请泉水和瀑布做好朋友，一起蹦蹦跳跳向前流。', '有伙伴相伴，小河变得坚强勇敢，快乐地流向前方。'],
+    tip: '朗读课文，说说小河的心情是怎样变化的。',
     questions: [
-      choice('风娃娃做的好事是什么？', ['吹动风车和帆船', '吹跑风筝', '吹断小树', '吹走衣服'], 0),
-      match('把风和结果连起来。', [
-        { left: '吹动风车', right: '好事' }, { left: '吹跑风筝', right: '坏事' },
-      ]),
-      truefalse('风娃娃只要使劲吹就是帮忙。', false, '帮忙要看别人需不需要。'),
+      choice('小河为什么哭了？', ['撞在大山上，撞疼了', '水太少了', '迷路了', '太累了'], 0),
+      truefalse('大山告诉小河：跌几个跟头，能让人长劲儿。', true),
+      order('小河结伴的顺序是？', ['小河', '山泉', '瀑布', '一起流向前方']),
     ],
-    dictation: [d('u8l4', '田野', 'tián yě'), d('u8l4', '风车', 'fēng chē'), d('u8l4', '秧苗', 'yāng miáo'), d('u8l4', '伤心', 'shāng xīn'), d('u8l4', '生气', 'shēng qì')],
+    dictation: [d('u8l5', '抱怨', 'bào yuàn'), d('u8l5', '松软', 'sōng ruǎn'), d('u8l5', '野花', 'yě huā'), d('u8l5', '勇敢', 'yǒng gǎn'), d('u8l5', '伙伴', 'huǒ bàn')],
   },
 ];
 

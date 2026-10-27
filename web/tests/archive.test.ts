@@ -4,7 +4,8 @@ import { archiveState, lifetimeTotals } from '../src/core/archive';
 import { normalizeState, type SyncState } from '../src/core/model';
 import { addDays, todayKey } from '../src/core/date';
 
-function logOf(date: string, done = 3, minutes = 15, stars = 3, food = 4): SyncState['dailyLogs'][string] {
+
+function logOf(done = 3, minutes = 15, stars = 3, food = 4): SyncState['dailyLogs'][string] {
   return { planned: 3, done: Array.from({ length: done }, (_, i) => `t${i}`), minutes, stars, food, dictationTotal: 0, dictationCorrect: 0, allDone: done >= 3 };
 }
 
@@ -17,7 +18,7 @@ describe('archiveState', () => {
   const today = todayKey();
 
   it('120 天内的日志完整保留，不产生归档', () => {
-    const state = baseState({ [addDays(today, -30)]: logOf(addDays(today, -30)) });
+    const state = baseState({ [addDays(today, -30)]: logOf() });
     expect(archiveState(state, today)).toBe(state);
   });
 
@@ -25,7 +26,7 @@ describe('archiveState', () => {
     const old1 = addDays(today, -200);
     const old2 = addDays(today, -150);
     const state = baseState(
-      { [old1]: logOf(old1, 3, 20, 3, 4), [old2]: { planned: 0, done: [], minutes: 0, stars: 0, food: 0, dictationTotal: 0, dictationCorrect: 0, allDone: false } },
+      { [old1]: logOf(3, 20, 3, 4), [old2]: { planned: 0, done: [], minutes: 0, stars: 0, food: 0, dictationTotal: 0, dictationCorrect: 0, allDone: false } },
       { [old1]: { tasks: [], generatedAt: 'x' }, [today]: { tasks: [], generatedAt: 'y' } },
     );
     const next = archiveState(state, today);
@@ -37,7 +38,7 @@ describe('archiveState', () => {
 
   it('幂等：第二次归档返回原引用，不重复累计', () => {
     const old1 = addDays(today, -200);
-    const state = baseState({ [old1]: logOf(old1) });
+    const state = baseState({ [old1]: logOf() });
     const once = archiveState(state, today);
     const twice = archiveState(once, today);
     expect(twice).toBe(once);
@@ -46,7 +47,7 @@ describe('archiveState', () => {
 
   it('滚动边界：昨天的边界日志今天落入窗口外，正确追加', () => {
     const edge = addDays(today, -120);
-    const state = baseState({ [edge]: logOf(edge, 1, 5, 1, 1) });
+    const state = baseState({ [edge]: logOf(1, 5, 1, 1) });
     // 今天跑：-120 恰好在窗口边界内（< edge 为窗口外？cutoff = today-120，key < cutoff 才归档）
     const first = archiveState(state, today);
     // key(-120) vs cutoff(-120)：不小于 → 保留
@@ -56,7 +57,7 @@ describe('archiveState', () => {
   it('lifetimeTotals：近窗明细 + 归档合计', () => {
     const old1 = addDays(today, -200);
     const recent = addDays(today, -1);
-    let state = baseState({ [old1]: logOf(old1, 2, 10, 2, 2), [recent]: logOf(recent, 3, 15, 3, 4) });
+    let state = baseState({ [old1]: logOf(2, 10, 2, 2), [recent]: logOf(3, 15, 3, 4) });
     state = archiveState(state, today);
     const totals = lifetimeTotals(state);
     expect(totals).toMatchObject({ days: 2, done: 5, minutes: 25, stars: 5, food: 6 });

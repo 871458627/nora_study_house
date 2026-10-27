@@ -31,10 +31,10 @@ describe('年级键与包可用性', () => {
 });
 
 describe('包切换与内容隔离', () => {
-  it('默认二上：语文第 1 课是 小蝌蚪找妈妈，28 课', () => {
+  it('默认二上：语文第 1 课是 小蝌蚪找妈妈，27 篇（阅读 23 + 识字 4）', () => {
     setPack('g2s1');
     expect(lessonsForSubject('chinese')[0]?.title).toBe('小蝌蚪找妈妈');
-    expect(lessonsForSubject('chinese')).toHaveLength(28);
+    expect(lessonsForSubject('chinese')).toHaveLength(27);
   });
 
   it('切到二下：语文第 1 课是 古诗二首，25 课；id 前缀 cn2- 不与二上冲突', () => {
