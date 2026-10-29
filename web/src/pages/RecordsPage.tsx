@@ -50,7 +50,7 @@ function downloadArchive(entry: GradeArchiveEntry): void {
 }
 
 export function RecordsPage() {
-  const { state, parentAccount } = useApp();
+  const { state, parentAccount, switchGrade } = useApp();
   const today = todayKey();
   const weekStart = startOfWeek(today);
   const heatStart = addDays(weekStart, -77);
@@ -334,9 +334,22 @@ export function RecordsPage() {
                           学过 {String(entry.summary['lessons'] ?? 0)} 课 · 待订正错题 {String(entry.summary['unresolvedMistakes'] ?? 0)} 道
                         </span>
                       </div>
-                      <button type="button" className="text-link" onClick={() => downloadArchive(entry)}>
-                        导出 JSON
-                      </button>
+                      <div style={{ display: 'flex', gap: 4, flex: 'none' }}>
+                        <button
+                          type="button"
+                          className="text-link"
+                          onClick={() => {
+                            const grade = Number(entry.gradeKey.slice(1, 2));
+                            const semester = entry.gradeKey.endsWith('s1') ? 's1' : 's2';
+                            void switchGrade(grade as 1 | 2 | 3 | 4 | 5 | 6, semester as 's1' | 's2');
+                          }}
+                        >
+                          恢复
+                        </button>
+                        <button type="button" className="text-link" onClick={() => downloadArchive(entry)}>
+                          导出
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

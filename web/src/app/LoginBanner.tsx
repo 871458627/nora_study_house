@@ -13,11 +13,20 @@ export function LoginBanner() {
   const [dismissed, setDismissed] = useState(false);
   const navigate = useNavigate();
 
+  const visible = syncStatus === 'logged_out' && !dismissed;
+
   useEffect(() => {
     if (syncStatus !== 'logged_out') setDismissed(false);
   }, [syncStatus]);
 
-  if (syncStatus !== 'logged_out' || dismissed) return null;
+  // 横幅悬浮在页面底部之上：可见时给内容让出底部空间，
+  // 防止盖住设置本机 PIN 这类页面底部的按钮（点击落到横幅上＝没反应）。
+  useEffect(() => {
+    document.body.classList.toggle('has-login-banner', visible);
+    return () => document.body.classList.remove('has-login-banner');
+  }, [visible]);
+
+  if (!visible) return null;
   return (
     <div className="pending-conflict login-banner" role="status">
       <span className="pending-conflict-icon">

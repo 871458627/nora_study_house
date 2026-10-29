@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mascot } from '../../components/Mascot';
 import { Icon } from '../../components/Icon';
@@ -34,11 +34,12 @@ function typeLabel(question: Question): string {
   return '选择';
 }
 
-function outcomeFor(questions: Question[], responses: ResponseValue[]): TaskOutcome {
+function outcomeFor(questions: Question[], responses: ResponseValue[], actualSeconds?: number): TaskOutcome {
   const result = gradeSession(questions, responses);
   return {
     correct: result.correct,
     total: result.total,
+    ...(actualSeconds !== undefined ? { actualSeconds } : {}),
     // 口算等即时生成题需要快照才能进错题本（progress.updateMistakes 按此落库）
     questions,
     weakness: result.weakness,
@@ -74,6 +75,8 @@ export function PracticeSession({
   );
   const [finished, setFinished] = useState(false);
   const [leaveOpen, setLeaveOpen] = useState(false);
+  // 实际用时（docs/12 批次4 #10）：从组件挂载（首题展示）计时
+  const startedAtRef = useRef(Date.now());
   const navigate = useNavigate();
 
   const current = questions[index];
@@ -204,7 +207,7 @@ export function PracticeSession({
             <button
               type="button"
               className="btn btn-primary full"
-              onClick={() => onFinish(outcomeFor(questions, responses))}
+              onClick={() => onFinish(outcomeFor(questions, responses, Math.round((Date.now() - startedAtRef.current) / 1000)))}
             >
               {mode === 'task' ? '收下今天的奖励' : '记录这次练习'}
               <Icon name="check" size={16} />

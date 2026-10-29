@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthError, credentialProblem } from '../app/auth';
 import { useApp } from '../app/AppProvider';
@@ -56,6 +56,7 @@ function bindAuthErrorText(error: unknown): string {
 export function OnboardingPage() {
   const {
     state,
+    device,
     bindLogin,
     bindRegister,
     bindPull,
@@ -78,7 +79,24 @@ export function OnboardingPage() {
   const [pullFailed, setPullFailed] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  // 引导已完成（含 PIN）就不再渲染任何表单：从 LearnGate「去家长绑定」进入时
+  // URL 停在 /onboarding，若不回首页，设置完 PIN 后这张表单会原样重现，
+  // 看起来就像「点了没反应」。 pinHash 就绪时直接回首页。
+  useEffect(() => {
+    if (state.onboarded && device.pinHash) navigate('/');
+  }, [state.onboarded, device.pinHash, navigate]);
+
   if (state.onboarded) {
+    if (device.pinHash) {
+      // 导航生效前的过渡帧：不再渲染表单，避免重复设置。
+      return (
+        <div className="onboarding">
+          <div className="onboarding-card card">
+            <h2>设置完成，正在进入小桃学习屋…</h2>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="onboarding">
         <div className="onboarding-art">
@@ -414,6 +432,9 @@ export function OnboardingPage() {
                   dailyMinutes: minutes,
                   pin,
                 });
+                // 引导完成立即回首页：URL 可能停在 /onboarding，
+                // 不跳转的话接管屏退出后还会落在同一张 PIN 表单上。
+                navigate('/');
               }}
               submitLabel="完成，进入小桃学习屋"
             />

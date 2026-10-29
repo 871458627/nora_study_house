@@ -4819,6 +4819,19 @@ a.task-row:active {
   flex-shrink: 0;
 }
 
+/* 登录/冲突横幅悬浮在底部之上：可见时内容让出空间，
+ * 避免盖住页面底部按钮（如设置本机 PIN 的提交按钮）。
+ * 移动端横幅 top 缘距底 ≈150px，桌面 ≈58px。 */
+body.has-login-banner .page-wrap {
+  padding-bottom: 160px;
+}
+
+@media (min-width: 900px) {
+  body.has-login-banner .page-wrap {
+    padding-bottom: 80px;
+  }
+}
+
 @media (min-width: 900px) {
   .pending-conflict {
     bottom: 24px;
@@ -6258,3 +6271,118 @@ a.task-row:active {
 .reader-current{font-size:13px;color:var(--ink);line-height:1.6;margin:0;}
 .reader-hint{font-size:12px;color:var(--sub);line-height:1.6;margin:0;}
 .reader-progress{font-size:10.5px;color:var(--ter,#86868b);}
+
+/* ============================================================
+   跟我读（2026-10-27 需求：孩子朗读 + 发音评分）
+   ============================================================ */
+
+.read-along-card {
+  margin-bottom: 18px;
+}
+
+.read-along {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 0;
+  border-bottom: 0.5px solid var(--line);
+}
+
+.read-along:last-of-type {
+  border-bottom: none;
+}
+
+.read-along-target {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+.read-along-listen {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 36px;
+  padding: 0 10px;
+  margin: -4px -6px;
+  border: none;
+  border-radius: 9px;
+  background: var(--fill);
+  color: var(--accent);
+  font-size: 12.5px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.read-along-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+}
+
+.read-along-mic {
+  min-width: 120px;
+}
+
+.read-along-live {
+  color: var(--ter);
+  font-size: 12.5px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.read-along-result {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  padding: 10px 13px;
+  border-radius: 12px;
+  font-size: 13px;
+}
+
+.read-along-result.good {
+  background: var(--mint-soft, #e6f6ec);
+  color: var(--mint, #1e8e3e);
+}
+
+.read-along-result.try {
+  background: #fff3d4;
+  color: var(--amber, #8a641c);
+}
+
+.read-along-stars {
+  font-size: 17px;
+  letter-spacing: 0.12em;
+}
+
+.read-along-stars i {
+  font-style: normal;
+  opacity: 0.28;
+}
+
+.read-along-result small {
+  font-size: 12px;
+}
+
+.read-along-error {
+  color: var(--danger, #d70015);
+  font-size: 12.5px;
+}
+
+.read-along-toggle {
+  align-self: flex-start;
+  font-size: 12px;
+}
+
+.read-along-help {
+  color: var(--sub);
+  font-size: 12px;
+  line-height: 1.6;
+}

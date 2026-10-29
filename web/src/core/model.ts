@@ -171,6 +171,8 @@ export interface TaskOutcome {
   total: number;
   /** 会话内全部题目（口算等即时生成题进错题本快照用；课本题可省略） */
   questions?: Question[];
+  /** 实际用时（秒）：会话首题展示到末题提交；缺省回落计划分钟 */
+  actualSeconds?: number;
   weakness: { pointId: string; correct: boolean }[];
   wrongQuestionIds: string[];
   correctQuestionIds?: string[];

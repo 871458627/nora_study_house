@@ -229,11 +229,14 @@ export function applyTaskOutcome(
   const dictationPerfect =
     dictationWordResults.length > 0 && dictationWordResults.every(word => word.correct);
 
+  const actualMinutes = outcome.actualSeconds !== undefined
+    ? Math.max(1, Math.round(outcome.actualSeconds / 60))
+    : task.minutes; // 老会话无计时：回落计划分钟
   const log: DailyLog = {
     ...baseLog,
     planned: Math.max(baseLog.planned, tasks.length),
     done: [...baseLog.done, task.id],
-    minutes: baseLog.minutes + task.minutes,
+    minutes: baseLog.minutes + actualMinutes,
     stars: baseLog.stars + 1,
     food: baseLog.food + 1 + (perfect ? 1 : 0),
     dictationTotal: baseLog.dictationTotal + dictationWordResults.length,
