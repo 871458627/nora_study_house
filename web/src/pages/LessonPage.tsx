@@ -210,6 +210,9 @@ export function LessonPage() {
             <h2>跟我读</h2>
             <span className="chip-label">读准了拿星星</span>
           </div>
+          <p className="read-along-card-note">
+            点「跟我读」大声读出句子，系统给发音打分。语音由浏览器识别，小桃学习屋不保存录音。
+          </p>
           {readAlongSentences.map(sentence => (
             <ReadAlong key={sentence} sentence={sentence} />
           ))}

@@ -6273,29 +6273,44 @@ body.has-login-banner .page-wrap {
 .reader-progress{font-size:10.5px;color:var(--ter,#86868b);}
 
 /* ============================================================
-   跟我读（2026-10-27 需求：孩子朗读 + 发音评分）
+   跟我读（孩子朗读 + 发音评分）——嵌入式子面板布局：
+   每句一个浅灰圆角面板，句子/操作/结果三层留白分明，杜绝贴边。
    ============================================================ */
 
 .read-along-card {
   margin-bottom: 18px;
+  padding: 18px 16px 8px;
+}
+
+.read-along-card .section-title {
+  margin-bottom: 12px;
+}
+
+.read-along-card-note {
+  color: var(--sub);
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0 0 12px;
 }
 
 .read-along {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px 0;
-  border-bottom: 0.5px solid var(--line);
+  gap: 10px;
+  background: var(--bg);
+  border-radius: 14px;
+  padding: 13px 14px 12px;
+  margin-bottom: 10px;
 }
 
 .read-along:last-of-type {
-  border-bottom: none;
+  margin-bottom: 6px;
 }
 
 .read-along-target {
   display: flex;
   align-items: flex-start;
-  gap: 9px;
+  gap: 10px;
   font-size: 15px;
   line-height: 1.6;
   color: var(--ink);
@@ -6305,27 +6320,31 @@ body.has-login-banner .page-wrap {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  min-height: 36px;
-  padding: 0 10px;
-  margin: -4px -6px;
+  height: 30px;
+  padding: 0 11px;
   border: none;
-  border-radius: 9px;
-  background: var(--fill);
+  border-radius: 999px;
+  background: #fff;
   color: var(--accent);
   font-size: 12.5px;
   font-weight: 600;
   flex-shrink: 0;
+  box-shadow: var(--shadow);
+}
+
+.read-along-listen:active {
+  transform: scale(0.96);
 }
 
 .read-along-actions {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 44px;
 }
 
 .read-along-mic {
-  min-width: 120px;
+  flex: 1;
+  min-width: 0;
 }
 
 .read-along-live {
@@ -6345,16 +6364,17 @@ body.has-login-banner .page-wrap {
   padding: 10px 13px;
   border-radius: 12px;
   font-size: 13px;
+  background: #fff;
 }
 
 .read-along-result.good {
-  background: var(--mint-soft, #e6f6ec);
   color: var(--mint, #1e8e3e);
+  box-shadow: inset 0 0 0 1px rgba(30, 142, 62, 0.25);
 }
 
 .read-along-result.try {
-  background: #fff3d4;
   color: var(--amber, #8a641c);
+  box-shadow: inset 0 0 0 1px rgba(138, 100, 28, 0.25);
 }
 
 .read-along-stars {
@@ -6374,15 +6394,18 @@ body.has-login-banner .page-wrap {
 .read-along-error {
   color: var(--danger, #d70015);
   font-size: 12.5px;
+  margin: 0;
 }
 
 .read-along-toggle {
   align-self: flex-start;
   font-size: 12px;
+  min-height: 36px;
 }
 
 .read-along-help {
   color: var(--sub);
   font-size: 12px;
   line-height: 1.6;
+  margin: -4px 0 2px;
 }

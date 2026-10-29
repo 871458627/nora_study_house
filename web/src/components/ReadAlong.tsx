@@ -13,7 +13,6 @@ export function ReadAlong({ sentence }: { sentence: string }) {
   const listener = useSpeechRecognition('zh-CN');
   const [score, setScore] = useState<ReadingScore | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
-  const [showTarget, setShowTarget] = useState(false);
 
   const busy = listener.state === 'listening';
 
@@ -94,15 +93,6 @@ export function ReadAlong({ sentence }: { sentence: string }) {
         </p>
       )}
 
-      <button type="button" className="text-link read-along-toggle" onClick={() => setShowTarget(v => !v)}>
-        {showTarget ? '收起说明' : '怎么玩？'}
-      </button>
-      {showTarget && (
-        <p className="read-along-help">
-          点「跟我读」后大声读出这句话，系统会听你读得准不准，给一颗到三颗星。
-          语音由浏览器系统识别，小桃学习屋不会保存录音。
-        </p>
-      )}
     </div>
   );
 }
