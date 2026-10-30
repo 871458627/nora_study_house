@@ -830,10 +830,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       bindLogin,
       bindRegister,
       bindPull,
-      // 学习解锁必须同时满足「已登录」和「本机已初始化」：拉取失败的设备虽已
-      // 拿到 token，但还不知道云端家庭状态，放行学习会绕过绑定制造冲突。
-      // 学习照常（docs/12 v1.2 口径）：账号登录只影响云同步与多设备，不阻断学习。
-      canLearn: state.onboarded,
+      // 学习解锁 = 已登录 且 本机已初始化（2026-10-27 用户终审裁定，docs/06 §3.10）：
+      // 未登录学习的数据只存本机，设备丢失/清理即全部蒸发——数据安全优先，
+      // 未登录（含登录过期）一律只可浏览；335dd45 的「学习照常」放宽作废。
+      // 「已登录但拉取失败」同样锁死：设备尚不知道云端家庭状态，放行会绕过绑定制造冲突。
+      canLearn: parentAccount !== null && state.onboarded,
       enterVisitor,
       exitVisitor,
       switchGrade,

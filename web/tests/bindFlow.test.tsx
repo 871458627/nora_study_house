@@ -220,4 +220,33 @@ describe('学习门禁 LearnGate（docs/06 §3.10）', () => {
     fireEvent.click(screen.getByRole('button', { name: '继续随便看看' }));
     expect(await screen.findByText('CANNOT_LEARN')).toBeInTheDocument();
   });
+
+  it('已初始化设备登录过期（S7）：学习同样锁死，去登录跳设置页（2026-10-27 终审口径）', async () => {
+    stubFetch(() => jsonResponse(200, remotePayload(true)));
+    // 本机已有已初始化缓存（含 PIN 态），但没有家长账号——模拟登录过期/未登录的旧设备
+    window.localStorage.setItem(
+      'xiaotao-sync-cache-v2',
+      JSON.stringify({ ...createInitialState(), onboarded: true, profile: { nickname: '朵朵' } }),
+    );
+    window.localStorage.setItem(
+      'xiaotao-device-v2',
+      JSON.stringify({
+        version: 2,
+        pinHash: 'x',
+        pinSalt: 'x',
+        failures: { count: 0 },
+        revision: 3,
+        dirty: false,
+        visitor: false,
+      }),
+    );
+
+    renderBindApp('/task/t1');
+
+    await screen.findByText('家长登录后，才能开始学习。');
+    expect(screen.queryByText('SECRET_TASK')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '去登录' }));
+    expect(await screen.findByText('SETTINGS')).toBeInTheDocument();
+  });
 });
