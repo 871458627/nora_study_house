@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useSpeech } from '../app/useSpeech';
 import { useSpeechRecognition } from '../app/useSpeechRecognition';
 import { scoreReading, type ReadingScore } from '../core/pronunciation';
@@ -13,14 +13,75 @@ export function ReadAlong({ sentence }: { sentence: string }) {
   const listener = useSpeechRecognition('zh-CN');
   const [score, setScore] = useState<ReadingScore | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
+  // 麦克风自检（纯本地 Web Audio 音量表）：区分「设备没声」与「识别服务连不上」
+  const [micTest, setMicTest] = useState<'idle' | 'testing' | 'ok' | 'silent' | 'fail'>('idle');
+  const [micLevel, setMicLevel] = useState(0);
+  // 监听挂起检测：迟迟没有任何转写时，如实提示可能是识别服务连不上
+  const [stuckHint, setStuckHint] = useState(false);
+  const stuckTimerRef = useRef(0);
 
   const busy = listener.state === 'listening';
 
   const start = () => {
     setScore(null);
     setErrorCode(null);
+    setStuckHint(false);
     stopSpeech();
-    listener.start(text => setScore(scoreReading(sentence, text)), code => setErrorCode(code));
+    window.clearTimeout(stuckTimerRef.current);
+    stuckTimerRef.current = window.setTimeout(() => {
+      // 8 秒仍无任何转写：大概率是浏览器识别服务（Chrome 依赖云服务）没连上
+      setStuckHint(true);
+    }, 8000);
+    listener.start(text => {
+      window.clearTimeout(stuckTimerRef.current);
+      setStuckHint(false);
+      setScore(scoreReading(sentence, text));
+    }, code => {
+      window.clearTimeout(stuckTimerRef.current);
+      setStuckHint(false);
+      setErrorCode(code);
+    });
+  };
+
+  /** 麦克风自检：采集 2.4 秒实时音量，峰值即设备是否真有声音进来。 */
+  const runMicTest = async () => {
+    setMicTest('testing');
+    setMicLevel(0);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+      const source = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 512;
+      source.connect(analyser);
+      const buf = new Uint8Array(analyser.frequencyBinCount);
+      let peak = 0;
+      let rounds = 0;
+      await new Promise<void>(resolve => {
+        const tick = () => {
+          analyser.getByteTimeDomainData(buf);
+          let sum = 0;
+          for (const v of buf) {
+            const d = v - 128;
+            sum += d * d;
+          }
+          const rms = Math.sqrt(sum / buf.length) / 128;
+          peak = Math.max(peak, rms);
+          setMicLevel(Math.min(1, rms * 4));
+          rounds += 1;
+          if (rounds >= 12) resolve();
+          else window.setTimeout(tick, 200);
+        };
+        tick();
+      });
+      stream.getTracks().forEach(t => t.stop());
+      ctx.close();
+      setMicTest(peak > 0.02 ? 'ok' : 'silent');
+      setMicLevel(0);
+    } catch {
+      setMicTest('fail');
+      setMicLevel(0);
+    }
   };
 
   const stars = score?.stars ?? 0;
@@ -58,6 +119,12 @@ export function ReadAlong({ sentence }: { sentence: string }) {
             <span className="read-along-live" aria-live="polite">
               {listener.transcript || '正在听，请大声读…读完会自动评分' }
             </span>
+            {stuckHint && !listener.transcript && (
+              <span className="read-along-stuck" role="alert">
+                一直没听到声音：浏览器的识别服务可能没连上（Chrome 需联网）。
+                换 Edge 浏览器通常可用；也可以点「读完了」结束。
+              </span>
+            )}
           </>
         ) : (
           <button type="button" className="btn btn-soft read-along-mic" onClick={start}>
@@ -83,6 +150,28 @@ export function ReadAlong({ sentence }: { sentence: string }) {
         </div>
       )}
 
+      {micTest !== 'idle' && (
+        <div
+          className={`read-along-result mic-test ${micTest === 'ok' ? 'good' : micTest === 'testing' ? 'try' : 'try'}`}
+          aria-live="polite"
+        >
+          {micTest === 'testing' ? (
+            <>
+              <b>麦克风测试中…</b>
+              <span className="mic-meter" aria-hidden="true">
+                <i style={{ width: `${Math.round(micLevel * 100)}%` }} />
+              </span>
+            </>
+          ) : micTest === 'ok' ? (
+            <b>✓ 麦克风正常，能听到声音</b>
+          ) : micTest === 'silent' ? (
+            <b>麦克风没有收到声音：检查系统麦克风设置与默认设备</b>
+          ) : (
+            <b>麦克风不可用：{''}请在浏览器权限里允许麦克风</b>
+          )}
+        </div>
+      )}
+
       {errorCode && (
         <p className="read-along-error" role="alert">
           {errorCode === 'not-allowed' || errorCode === 'service-not-allowed'
@@ -95,8 +184,21 @@ export function ReadAlong({ sentence }: { sentence: string }) {
                   ? '语音识别需要联网：检查网络后再试一次。'
                   : errorCode === 'speak-failed'
                     ? '示范朗读没发出来：再点一次试试；若一直无声，请检查系统的文字转语音（TTS）语音包。'
-                    : '没听清你的声音，大声一点、靠近一点再试一次。'}
+                    : errorCode === 'no-speech' || errorCode === 'aborted'
+                      ? '没等到你的声音。若反复出现，多半是浏览器的语音识别服务没连上（Chrome 需联网到 Google 服务）——换 Edge 浏览器通常可用，或由家长带读。'
+                      : '没听清你的声音，大声一点、靠近一点再试一次。'}
         </p>
+      )}
+
+      {errorCode === 'no-speech' && micTest === 'idle' && (
+        <button type="button" className="text-link read-along-mictest" onClick={runMicTest}>
+          麦克风好像没声？点这里测一测
+        </button>
+      )}
+      {micTest !== 'idle' && micTest !== 'testing' && (
+        <button type="button" className="text-link read-along-mictest" onClick={runMicTest}>
+          再测一次麦克风
+        </button>
       )}
 
     </div>

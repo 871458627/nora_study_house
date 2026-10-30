@@ -6409,3 +6409,33 @@ body.has-login-banner .page-wrap {
   line-height: 1.6;
   margin: -4px 0 2px;
 }
+
+/* 麦克风自检与挂起提示 */
+.read-along-stuck {
+  color: var(--amber, #8a641c);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.read-along-mictest {
+  align-self: flex-start;
+  font-size: 12px;
+  min-height: 36px;
+}
+
+.mic-meter {
+  display: inline-block;
+  width: 120px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.mic-meter i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent, #0071e3);
+  transition: width 0.15s ease-out;
+}
