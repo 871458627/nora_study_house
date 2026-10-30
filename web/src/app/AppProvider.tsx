@@ -58,6 +58,7 @@ import {
 } from '../core/sync';
 import { decideBootstrap } from '../core/syncBoot';
 import { clearPinUnlock, pinUnlockStore, rememberPinUnlock } from '../core/pinSession';
+import { clearGradeArchives } from '../core/gradeArchive';
 import {
   clearSession,
   currentAccount,
@@ -762,6 +763,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (mode === 'wipe') {
       clearOutbox();
       clearLocalData();
+      // 年级归档键不分家庭：不清的话下一账号在同机走本机切换通道会读到
+      // 上一家庭的进度（缺陷清单 H2 跨家庭串号）。
+      clearGradeArchives();
       const freshDevice = emptyDevice();
       deviceRef.current = freshDevice;
       setDevice(freshDevice);

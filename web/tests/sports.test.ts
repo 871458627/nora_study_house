@@ -102,6 +102,16 @@ describe('运动打卡奖励结算', () => {
     expect(sportsCheckinDelta(sports, TODAY, rope, 0)).toBeNull();
     expect(sports.logs[TODAY][rope.id]).toBe(300);
   });
+
+  it('M9：跌破达标线再达标不重复发星（当日已发计数为准）', () => {
+    let sports = createInitialState().sports;
+    sports = sportsCheckinDelta(sports, TODAY, rope, 300)!.sports; // 达标 +1 星
+    sports = sportsCheckinDelta(sports, TODAY, rope, 100)!.sports; // 跌破
+    const again = sportsCheckinDelta(sports, TODAY, rope, 300)!; // 再达标
+    expect(again.justMet).toBe(true);
+    expect(again.starGain).toBe(0); // 该项目的星当日已发，不重复发
+    expect(again.sports.starItemsIssued[TODAY]).toEqual([rope.id]);
+  });
 });
 
 describe('连续打卡 streak', () => {
@@ -267,7 +277,7 @@ describe('normalizeState 运动数据兼容', () => {  it('旧数据没有 sport
     delete old.sports;
     const normalized = normalizeState(old);
     expect(normalized).not.toBeNull();
-    expect(normalized!.sports).toEqual({ logs: {}, customItems: [], streak: 0, bestStreak: 0 });
+    expect(normalized!.sports).toEqual({ logs: {}, customItems: [], streak: 0, bestStreak: 0, starItemsIssued: {} });
   });
 
   it('畸形运动数据被安全过滤', () => {
@@ -276,7 +286,7 @@ describe('normalizeState 运动数据兼容', () => {  it('旧数据没有 sport
       sports: {
         logs: {
           'not-a-date': { rope: 1 },
-          [TODAY]: { rope: 'abc', jj: -5, run: 12.7 },
+          [TODAY]: { rope: 'abc', jj: -5, rope2: 0, run: 12.7 },
         },
         customItems: [{ id: 'swim', name: '游泳', unit: '米', goal: 200, step: 0 }, 'bad'],
         streak: -3,
@@ -285,6 +295,7 @@ describe('normalizeState 运动数据兼容', () => {  it('旧数据没有 sport
     });
     expect(state).not.toBeNull();
     expect(state!.sports.logs[TODAY]).toEqual({ run: 13 });
+    expect(state!.sports.logs[TODAY].rope2).toBeUndefined(); // 0 值日志不认
     expect(state!.sports.logs['not-a-date']).toBeUndefined();
     expect(state!.sports.customItems).toEqual([
       { id: 'custom-swim', name: '游泳', unit: '米', goal: 200, step: 1 },
@@ -302,6 +313,7 @@ describe('normalizeState 运动数据兼容', () => {  it('旧数据没有 sport
         streak: 9,
         bestStreak: 12,
         lastCheckDate: TODAY,
+        starItemsIssued: { [TODAY]: [rope.id] },
       },
     };
     const normalized = normalizeState(source);

@@ -25,6 +25,19 @@ export class AttemptLimiter {
     this.now = options.now ?? (() => Date.now())
   }
 
+  /** 过期窗口惰性回收（缺陷清单 H3）：公开端点的 key=IP×用户名不可枚举，
+   * 只写不删会在常驻单机 512MB 下无界增长（OOM）。写入路径顺手清扫。 */
+  private sweepExpired(now: number): void {
+    for (const [key, state] of this.windows) {
+      if (now - state.windowStart >= this.windowMs) this.windows.delete(key)
+    }
+  }
+
+  /** 测试与运维观测用：当前驻留 key 数。 */
+  get size(): number {
+    return this.windows.size
+  }
+
   isBlocked(key: string): boolean {
     const state = this.windows.get(key)
     if (!state) return false
@@ -34,6 +47,7 @@ export class AttemptLimiter {
 
   recordFailure(key: string): void {
     const now = this.now()
+    this.sweepExpired(now)
     const state = this.windows.get(key)
     if (!state || now - state.windowStart >= this.windowMs) {
       this.windows.set(key, { count: 1, windowStart: now })

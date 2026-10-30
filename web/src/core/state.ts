@@ -1,7 +1,7 @@
 import { ACCESSORIES } from '../data/defaults';
 import { PET_BY_ID } from '../data/pets';
 import { lessonsForSubject } from '../data/content';
-import { SPORTS_MAX_CUSTOM_ITEMS, type SportsItem } from '../data/sports';
+import { SPORTS_ITEMS, SPORTS_MAX_CUSTOM_ITEMS, type SportsItem } from '../data/sports';
 import type { Lesson, SubjectId, Timetable } from '../data/types';
 import { todayKey } from './date';
 import {
@@ -287,6 +287,8 @@ export function appReducer(state: SyncState, action: AppAction): SyncState {
       };
       if (!item.id || !item.name || !item.unit) return state;
       if (state.sports.customItems.length >= SPORTS_MAX_CUSTOM_ITEMS) return state;
+      // 不得与内置项目同名/同 id（撞名会让 remove 误清、find 命中错项，缺陷清单 低8）
+      if (SPORTS_ITEMS.some(b => b.id === item.id || b.name === item.name)) return state;
       // 同 id 或同名已存在 → 忽略（幂等）
       if (
         state.sports.customItems.some(

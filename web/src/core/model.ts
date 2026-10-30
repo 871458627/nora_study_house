@@ -1,6 +1,6 @@
 import { DEFAULT_PET_ID, PET_BY_ID } from '../data/pets';
 import { DEFAULT_SETTINGS, DEFAULT_TIMETABLE } from '../data/defaults';
-import { SPORTS_MAX_CUSTOM_ITEMS, type SportsItem } from '../data/sports';
+import { SPORTS_DAILY_STAR_CAP, SPORTS_MAX_CUSTOM_ITEMS, type SportsItem } from '../data/sports';
 import type { Question,
   Lesson,
   PlanTask,
@@ -130,6 +130,9 @@ export interface SportsState {
   streak: number;
   bestStreak: number;
   lastCheckDate?: string;
+  /** 当日已发星的项目 id 列表（按日期）——堵「跌破达标线再达标」重复刷星（缺陷清单 M9）：
+   * 同一项重复领取不发，上限 = 列表长度（当日最多 3 个不同项目） */
+  starItemsIssued: Record<string, string[]>;
 }
 
 export type Grade = 1 | 2 | 3 | 4 | 5 | 6;
@@ -218,7 +221,7 @@ export function createInitialState(): SyncState {
     dailyPlans: {},
     dailyLogs: {},
     freeLogs: {},
-    sports: { logs: {}, customItems: [], streak: 0, bestStreak: 0 },
+    sports: { logs: {}, customItems: [], streak: 0, bestStreak: 0, starItemsIssued: {} },
     updatedAt: new Date().toISOString(),
   };
 }
@@ -391,7 +394,7 @@ function normalizeSportsItem(raw: unknown): SportsItem | null {
 }
 
 function normalizeSports(value: unknown): SportsState {
-  if (!isRecord(value)) return { logs: {}, customItems: [], streak: 0, bestStreak: 0 };
+  if (!isRecord(value)) return { logs: {}, customItems: [], streak: 0, bestStreak: 0, starItemsIssued: {} };
   const logs: Record<string, Record<string, number>> = {};
   if (isRecord(value.logs)) {
     for (const [date, entries] of Object.entries(value.logs)) {
@@ -399,7 +402,8 @@ function normalizeSports(value: unknown): SportsState {
       const day: Record<string, number> = {};
       for (const [itemId, raw] of Object.entries(entries)) {
         const num = Number(raw);
-        if (itemId && Number.isFinite(num) && num >= 0) {
+        // 0 值不认（缺陷清单 低8）：外部注入 0 会被计为「已打卡」并触发首打卡奖励
+        if (itemId && Number.isFinite(num) && num > 0) {
           day[itemId.slice(0, 40)] = Math.min(100000, Math.round(num));
         }
       }
@@ -412,12 +416,24 @@ function normalizeSports(value: unknown): SportsState {
         .filter((item): item is SportsItem => item !== null)
         .slice(0, SPORTS_MAX_CUSTOM_ITEMS)
     : [];
+  const starItemsIssued: Record<string, string[]> = {};
+  if (isRecord(value.starItemsIssued)) {
+    for (const [date, raw] of Object.entries(value.starItemsIssued)) {
+      if (!isValidDateKey(date) || !Array.isArray(raw)) continue;
+      starItemsIssued[date] = [
+        ...new Set(
+          raw.filter((id): id is string => typeof id === "string" && id.length > 0).slice(0, SPORTS_DAILY_STAR_CAP),
+        ),
+      ];
+    }
+  }
   return {
     logs,
     customItems,
     streak: Math.max(0, Number(value.streak) || 0),
     bestStreak: Math.max(0, Number(value.bestStreak) || 0),
     lastCheckDate: isValidDateKey(value.lastCheckDate) ? value.lastCheckDate : undefined,
+    starItemsIssued,
   };
 }
 

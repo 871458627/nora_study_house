@@ -19,6 +19,7 @@ const KEY = 'xiaotao-grade-archives-v1';
 type MinimalStorage = {
   getItem(name: string): string | null;
   setItem(name: string, value: string): void;
+  removeItem(name: string): void;
 };
 
 function defaultStorage(): MinimalStorage | null {
@@ -101,13 +102,27 @@ export function listGradeArchiveKeys(store: MinimalStorage | null = defaultStora
   return Object.keys(loadAll(store));
 }
 
+/** 清空全部本机归档（退出换账号 wipe 用，docs/02 §5.2-7）：归档键不分家庭，
+ * 不清的话下一账号在同机走本机切换通道会恢复上一家庭的进度（缺陷清单 H2）。 */
+export function clearGradeArchives(store: MinimalStorage | null = defaultStorage()): void {
+  try {
+    store?.removeItem(KEY);
+  } catch {
+    // 本机存储不可用：本就没有可清的归档
+  }
+}
+
 export function sliceIsNonEmpty(slice: Omit<GradeArchiveSlice, 'archivedAt'>): boolean {
   const lessons = slice.lessons;
   const mistakes = slice.mistakes;
   const weakness = slice.weakness;
+  const dictationQueue = slice.dictationQueue;
   return (
     (typeof lessons === 'object' && lessons !== null && Object.keys(lessons).length > 0) ||
     (Array.isArray(mistakes) && mistakes.length > 0) ||
-    (typeof weakness === 'object' && weakness !== null && Object.keys(weakness).length > 0)
+    (typeof weakness === 'object' && weakness !== null && Object.keys(weakness).length > 0) ||
+    (typeof dictationQueue === 'object' && dictationQueue !== null && Object.keys(dictationQueue).length > 0)
   );
+  // 口径对齐服务端 isNonEmptySlice：漏 dictationQueue 时纯听写进度在本机
+  // 切换通道不封存，切回即丢（缺陷清单 值得考虑2）。
 }

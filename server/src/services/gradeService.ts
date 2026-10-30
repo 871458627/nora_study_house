@@ -50,7 +50,7 @@ function sliceOf(data: Record<string, unknown>): LearningSlice {
 
 function archiveSummary(slice: LearningSlice): Record<string, unknown> {
   const lessons = isRecord(slice.lessons) ? Object.keys(slice.lessons).length : 0
-  const mistakes = Array.isArray(slice.mistakes) ? slice.mistakes.filter((m) => isRecord(m) && !isRecord(m) ? true : !(m as { resolvedAt?: unknown }).resolvedAt).length : 0
+  const mistakes = Array.isArray(slice.mistakes) ? slice.mistakes.filter((m) => isRecord(m) && !(m as { resolvedAt?: unknown }).resolvedAt).length : 0
   return { lessons, unresolvedMistakes: mistakes, archivedAt: new Date().toISOString() }
 }
 
@@ -156,7 +156,6 @@ export class GradeService {
       data['weakness'] = {}
       data['dictationQueue'] = {}
     }
-    if (restored) await callRepo(() => this.deps.repo.gradeArchives.delete(familyId, toKey))
 
     // 3) 年级标记写入（dates 键日志天然保留，不复位）
     data['grade'] = input.grade
@@ -180,6 +179,13 @@ export class GradeService {
       )
     } catch (error) {
       this.deps.logWarn?.('grade switch history slot write failed', { error: String(error) })
+    }
+
+    // 5) 恢复成功后才消费目标年级存档（单副本语义）：先删后 CAS 的话，CAS 409
+    // 时存档已被删、恢复未落库，重试只能「全新开始」——条件性丢数据（缺陷清单 H1）。
+    // 若此处失败留下残留档，下次切回该年级时的封存 upsert 会覆写它，自愈。
+    if (restored) {
+      await callRepo(() => this.deps.repo.gradeArchives.delete(familyId, toKey))
     }
 
     return {
