@@ -8,6 +8,7 @@ import { chineseLessons2S2, chineseUnits2S2 } from './packs/g2s2/chinese';
 import { englishLessons2S2, englishUnits2S2 } from './packs/g2s2/english';
 import { mathLessons2S2, mathUnits2S2 } from './packs/g2s2/math';
 import type { OralStage } from '../../core/oralMath';
+import { buildMathDrill } from './mathDrill';
 
 /** 年级学期键（docs/12）：g<年级>s<1|2>。 */
 export type GradeKey = `g${Grade}s${1 | 2}`;
@@ -27,10 +28,20 @@ const BASE_COLORS: Record<SubjectId, { color: string; soft: string }> = {
   english: { color: '#1E8E3E', soft: '#E6F6EC' },
 };
 
-// g2s1：二上（既有内容原样平移为第一个内置包）
+function withMathDrill(lessons: Lesson[]): Lesson[] {
+  return lessons.map((lesson) => {
+    if (lesson.subject !== 'math' || !(lesson.id.startsWith('ma-') || lesson.id.startsWith('m2s-'))) return lesson;
+    const existing = lesson.questions.length + (lesson.afterClass?.length ?? 0);
+    const drill = buildMathDrill(lesson.order, lesson.id, existing);
+    if (drill.length === 0) return lesson;
+    return { ...lesson, afterClass: [...(lesson.afterClass ?? []), ...drill] };
+  });
+}
+
+// g2s1：二上（既有内容原样平移为第一个内置包；数学课挂课后练习生成题）
 const PACK_G2S1: SubjectPack = {
   units: [...chineseUnits, ...mathUnits, ...englishUnits],
-  lessons: [...chineseLessons, ...mathLessons, ...englishLessons],
+  lessons: withMathDrill([...chineseLessons, ...mathLessons, ...englishLessons]),
   edition: {
     chinese: '统编版 · 二年级上册',
     math: '人教版 · 二年级上册',
@@ -42,7 +53,7 @@ const PACK_G2S1: SubjectPack = {
 // g2s2：二下（统编语文二下 + 人教数学二下 + 北京版英语二下结构示意）
 const PACK_G2S2: SubjectPack = {
   units: [...chineseUnits2S2, ...mathUnits2S2, ...englishUnits2S2],
-  lessons: [...chineseLessons2S2, ...mathLessons2S2, ...englishLessons2S2],
+  lessons: withMathDrill([...chineseLessons2S2, ...mathLessons2S2, ...englishLessons2S2]),
   edition: {
     chinese: '统编版 · 二年级下册',
     math: '人教版 · 二年级下册',

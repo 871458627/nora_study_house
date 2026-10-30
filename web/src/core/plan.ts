@@ -193,7 +193,35 @@ function makeWeakTask(state: SyncState, date: string): PlanTask | null {
   };
 }
 
-/**
+
+/** 每周复盘（2026-10-26 需求）：周日把本周数学错题集中重做一遍（≤10 道，含口算快照题）。 */
+export function collectWeeklyMathMistakes(state: SyncState, date: string): string[] {
+  const weekStart = addDays(date, -((new Date(date + 'T00:00:00').getDay() + 6) % 7));
+  return state.mistakes
+    .filter(m => !m.resolvedAt && m.wrongAt >= weekStart && m.wrongAt <= date)
+    .filter(m => {
+      if (m.snapshot) return true; // 口算快照题
+      const lesson = lessonById(m.lessonId);
+      return lesson?.subject === 'math';
+    })
+    .slice(0, 10)
+    .map(m => m.questionId);
+}
+
+function makeMathReviewTask(state: SyncState, date: string): PlanTask | null {
+  const questionIds = collectWeeklyMathMistakes(state, date);
+  if (questionIds.length === 0) return null;
+  return {
+    id: makeTaskId(date, 'weak', 'math-review'),
+    kind: 'weak',
+    subject: 'math',
+    lessonId: '',
+    title: '数学错题复盘',
+    subtitle: `${questionIds.length} 道本周错题 · 做对就订正`,
+    minutes: 8,
+    questionIds,
+  };
+}/**
  * Builds an ordered daily plan. Plans are persisted by the reducer so they
  * stay stable while a child works through them during the day.
  */
@@ -250,6 +278,11 @@ export function generatePlan(state: SyncState, date: string): PlanTask[] {
   if (isSunday && !tasks.some(task => task.kind === 'weak')) {
     const weak = makeWeakTask(state, date);
     if (weak) tasks.push(weak);
+  }
+  // 每周复盘（2026-10-26 需求）：周日固定追加数学错题复盘（本周错题，≤10 道）
+  if (isSunday) {
+    const mathReview = makeMathReviewTask(state, date);
+    if (mathReview) tasks.push(mathReview);
   }
 
   const hasScheduledWork = tasks.some(
