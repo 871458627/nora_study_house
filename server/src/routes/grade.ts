@@ -12,6 +12,7 @@ import { z } from 'zod'
 export type GradeRouteDeps = {
   gradeService: GradeService
   issuer: AccessTokenIssuer
+  rateLimits: { switch: { max: number; timeWindow: number } }
 }
 
 const switchSchema = z.object({
@@ -32,6 +33,7 @@ export const gradeRoutes: FastifyPluginAsync<GradeRouteDeps> = async (app, deps)
     {
       onRequest: [auth],
       bodyLimit: 4096,
+      config: { rateLimit: { max: deps.rateLimits.switch.max, timeWindow: deps.rateLimits.switch.timeWindow } },
     },
     async (request) => {
       const parsed = switchSchema.safeParse(request.body)
@@ -50,7 +52,7 @@ export const gradeRoutes: FastifyPluginAsync<GradeRouteDeps> = async (app, deps)
     },
   )
 
-  app.get('/grade-archives', { onRequest: [auth] }, async (request) => {
+  app.get('/grade-archives', { onRequest: [auth], config: { rateLimit: { max: deps.rateLimits.switch.max, timeWindow: deps.rateLimits.switch.timeWindow } } }, async (request) => {
     const archives = await deps.gradeService.listArchives(mustHaveUser(request).fid)
     return { ok: true, archives }
   })

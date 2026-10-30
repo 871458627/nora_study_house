@@ -34,6 +34,7 @@ export interface RateLimitsConfig {
   authCookie: RateWindow
   statePut: RateWindow
   securityEventPost: RateWindow
+  gradeSwitch: RateWindow
 }
 
 export interface BuildAppOptions {
@@ -53,6 +54,7 @@ const DEFAULT_RATE_LIMITS: RateLimitsConfig = {
   authCookie: { max: 30, timeWindow: 60 * 1000 },
   statePut: { max: 60, timeWindow: 60 * 1000 },
   securityEventPost: { max: 10, timeWindow: 60 * 1000 },
+  gradeSwitch: { max: 30, timeWindow: 60 * 1000 },
 }
 const DEFAULT_LOGIN_RATE_LIMIT = { max: 5, windowMs: 15 * 60 * 1000 }
 
@@ -132,7 +134,9 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   const clock: Clock = options.clock ?? systemClock
   const logger: boolean | FastifyBaseLogger = options.logger ?? pino({ level: config.logLevel, redact: REDACT })
 
-  const app = Fastify({ logger })
+  // trustProxy（docs/07 限速前提）：Render/nginx 反代是部署常态，不开启则
+  // request.ip 恒为代理 IP，登录/注册/refresh 限速全部退化为全局共享配额。
+  const app = Fastify({ logger, trustProxy: true })
 
   // 错误/404 处理器必须在任何 `await app.register` 之前挂到根上下文：
   // await 之后再 set 会落入 avvio 的隐式兄弟插件作用域，路由永远看不到。
@@ -209,7 +213,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     issuer,
     rateLimits: { post: rateLimits.securityEventPost },
   })
-  await app.register(gradeRoutes, { prefix: '/api/v1', gradeService, issuer })
+  await app.register(gradeRoutes, { prefix: '/api/v1', gradeService, issuer, rateLimits: { switch: rateLimits.gradeSwitch } })
   await app.register(healthRoutes, { prefix: '/api/v1', repo, version: config.appVersion })
 
   // 同源静态托管（docs/08 免费部署方案）：refresh cookie 是 SameSite=Strict，

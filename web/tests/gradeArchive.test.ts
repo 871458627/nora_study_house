@@ -8,9 +8,17 @@ import {
   takeGradeArchive,
 } from '../src/core/gradeArchive';
 
-function memoryStore(): { getItem(n: string): string | null; setItem(n: string, v: string): void } {
+function memoryStore(): {
+  getItem(n: string): string | null;
+  setItem(n: string, v: string): void;
+  removeItem(n: string): void;
+} {
   const map = new Map<string, string>();
-  return { getItem: (n) => map.get(n) ?? null, setItem: (n, v) => void map.set(n, v) };
+  return {
+    getItem: (n) => map.get(n) ?? null,
+    setItem: (n, v) => void map.set(n, v),
+    removeItem: (n) => void map.delete(n),
+  };
 }
 
 const slice = {
@@ -43,7 +51,7 @@ describe('本机年级归档', () => {
   });
 
   it('损坏的存储内容按空处理，不抛错', () => {
-    const bad = { getItem: () => '{broken', setItem: () => {} };
+    const bad = { getItem: () => '{broken', setItem: () => {}, removeItem: () => {} };
     expect(listGradeArchiveKeys(bad)).toEqual([]);
     expect(getGradeArchive('g2s1', bad)).toBeNull();
   });

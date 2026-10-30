@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../app/AppProvider';
 import { fetchGradeArchives, type GradeArchiveEntry } from '../app/auth';
-import { gradeLabel } from '../data/content';
+import { autoSemester, gradeLabel } from '../data/content';
 import { Icon } from '../components/Icon';
 import { ProgressBar, SubjectChip } from '../components/ui';
 import { BADGES } from '../data/defaults';
@@ -120,7 +120,10 @@ export function RecordsPage() {
         const grade = Number(entry.gradeKey.slice(1, 2));
         const semester = entry.gradeKey.endsWith('s1') ? 's1' : 's2';
         const override = state.semesterOverride;
-        return !(grade === (state.grade ?? 2) && (override ?? semester) === semester);
+        // 当前学期判定要与本机 effective 值一致：override 未设时用 autoSemester()，
+        // 写成 (override ?? semester) 是拿「条目自己的学期」比条目，恒真 → 当前学期存档全部被隐藏（缺陷清单 M7）。
+        const effectiveSemester = state.semesterOverride ?? autoSemester();
+        return !(grade === (state.grade ?? 2) && (override ?? semester) === effectiveSemester);
       })))
       .catch(() => setGradeArchiveList([]));
   }, [parentAccount, state.grade, state.semesterOverride]);

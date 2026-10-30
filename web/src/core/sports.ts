@@ -57,11 +57,13 @@ export function sportsDayStatus(
   const entries = sports.logs[date] ?? {};
   const checkedCount = catalog.filter(item => entries[item.id] !== undefined).length;
   const metCount = sportsMetCount(sports, date, catalog);
+  const issuedList = sports.starItemsIssued[date];
   return {
     checkedCount,
     metCount,
     foodEarned: checkedCount > 0 ? 1 : 0,
-    starEarned: Math.min(metCount, SPORTS_DAILY_STAR_CAP),
+    // 有发星记录（新数据）按记录展示；旧缓存（无记录）按当前达标数推导
+    starEarned: issuedList !== undefined ? issuedList.length : Math.min(metCount, SPORTS_DAILY_STAR_CAP),
   };
 }
 
@@ -96,10 +98,10 @@ export function sportsCheckinDelta(
   const justMet = !wasMet && isGoalMet(item, nextValue);
 
   // 星上限：当日已达标数（不含本次）达到上限后不再发放
-  const metBefore = wasMet
-    ? sportsMetCount(sports, date) - 1
-    : sportsMetCount(sports, date);
-  const starGain = justMet && metBefore < SPORTS_DAILY_STAR_CAP ? 1 : 0;
+  // 发星以「当日已发项目」为准（缺陷清单 M9）：达标数会随数值改小而回落，
+  // 只数当前达标项可被「达标→跌破→再达标」反复刷星；同一项目重复领取不发。
+  const issuedList = sports.starItemsIssued[date] ?? [];
+  const starGain = justMet && !issuedList.includes(item.id) && issuedList.length < SPORTS_DAILY_STAR_CAP ? 1 : 0;
 
   let streak = sports.streak;
   let bestStreak = sports.bestStreak;
@@ -118,6 +120,10 @@ export function sportsCheckinDelta(
     sports: {
       ...sports,
       logs: { ...sports.logs, [date]: { ...dayEntries, [item.id]: nextValue } },
+      starItemsIssued:
+        starGain > 0
+          ? { ...(sports.starItemsIssued ?? {}), [date]: [...issuedList, item.id] }
+          : sports.starItemsIssued,
       streak,
       bestStreak,
       lastCheckDate,
