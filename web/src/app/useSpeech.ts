@@ -264,8 +264,15 @@ export function useSpeech() {
           }
           bindEvents(utterance);
           current = utterance;
+          // Android Chrome 要求 speak() 在用户手势调用栈内，否则静默失败：
+          // wasBusy 的重发必须同步执行（桌面 Chromium 的 cancel 吞字怪癖才需要错峰）。
+          const isAndroid = /android/i.test(navigator.userAgent);
           const defer =
-            nextLeg === 0 ? (wasBusy ? SPEAK_DELAY_AFTER_CANCEL_MS : 0) : SPEAK_RETRY_DEFER_MS;
+            nextLeg === 0
+              ? wasBusy && !isAndroid
+                ? SPEAK_DELAY_AFTER_CANCEL_MS
+                : 0
+              : SPEAK_RETRY_DEFER_MS;
           const launch = () => {
             if (call.cancelled) return;
             try {

@@ -32,7 +32,11 @@ export function ReadAlong({ sentence }: { sentence: string }) {
           type="button"
           className="read-along-listen"
           aria-label="听这一句"
-          onClick={() => (busy ? null : speak(sentence, 'zh-CN', 0.82))}
+          onClick={() => {
+            if (busy) return;
+            listener.stop();
+            speak(sentence, 'zh-CN', 0.82, () => setErrorCode('speak-failed'), () => setErrorCode(null));
+          }}
         >
           <Icon name="speaker" size={15} /> 听
         </button>
@@ -89,7 +93,9 @@ export function ReadAlong({ sentence }: { sentence: string }) {
                 ? '没找到麦克风：检查麦克风连接后再试。'
                 : errorCode === 'network'
                   ? '语音识别需要联网：检查网络后再试一次。'
-                  : '没听清你的声音，大声一点、靠近一点再试一次。'}
+                  : errorCode === 'speak-failed'
+                    ? '示范朗读没发出来：再点一次试试；若一直无声，请检查系统的文字转语音（TTS）语音包。'
+                    : '没听清你的声音，大声一点、靠近一点再试一次。'}
         </p>
       )}
 
