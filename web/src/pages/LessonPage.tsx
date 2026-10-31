@@ -8,6 +8,7 @@ import { useLessonReader } from '../app/useLessonReader';
 import { ReadAlong } from '../components/ReadAlong';
 import { buildLessonReadScript } from '../core/lessonReader';
 import { lessonById, unitById, lessonLabel } from '../data/content';
+import { EnglishReadingCard } from '../features/reading/ReadingCard';
 import { LESSON_STATUS_LABEL, MASTERY_LABEL } from '../data/labels';
 import type { KnowledgePoint, Question } from '../data/types';
 import { lessonProgress } from '../core/model';
@@ -390,6 +391,8 @@ export function LessonPage() {
           </div>
         </section>
       ) : null}
+
+      {lesson.reading ? <EnglishReadingCard reading={lesson.reading} /> : null}
 
       {lesson.afterClass?.length ? (
         <section className="afterclass-section card">

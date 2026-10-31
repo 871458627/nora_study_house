@@ -1,5 +1,6 @@
 import type { Lesson, Unit } from '../../../types';
 import { buildPoints, buildQuestions, choice, englishWord, match, order, type LessonSeed } from '../../builders';
+import { englishReadings } from '../../englishReadings';
 
 // 北京出版社《英语》二年级下册（结构示意包：单元/课结构与词表按常规主题整理，
 // **以孩子课本为准**；句子排序等复杂题型 P2 接入）。课 id 前缀 e2s-。
@@ -123,4 +124,5 @@ export const englishLessons2S2: Lesson[] = seeds.map((seed) => ({
   review: { points: buildPoints(seed.id, 'r', seed.review), mistakes: seed.mistakes ?? [], tip: seed.tip },
   questions: buildQuestions(seed.id, [...buildPoints(seed.id, 'p', seed.preview), ...buildPoints(seed.id, 'r', seed.review)].map((p) => p.id), seed.questions),
   words: seed.words,
+  reading: englishReadings[seed.id],
 }));

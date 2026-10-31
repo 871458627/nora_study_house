@@ -45,7 +45,8 @@ export type AppAction =
   | { type: 'praise-remove'; id: string }
   | { type: 'sports-checkin'; date: string; itemId: string; value: number }
   | { type: 'sports-custom-add'; item: SportsItem }
-  | { type: 'sports-custom-remove'; id: string };
+  | { type: 'sports-custom-remove'; id: string }
+  | { type: 'reading-practice'; date: string; correct: number; total: number };
 
 function withPlan(state: SyncState, date: string): SyncState {
   if (state.dailyPlans[date]) return state;
@@ -320,6 +321,30 @@ export function appReducer(state: SyncState, action: AppAction): SyncState {
           ...state.sports,
           customItems: state.sports.customItems.filter(item => item.id !== action.id),
           logs,
+        },
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    case 'reading-practice': {
+      // 英语短文阅读（docs/06 §3.13）：自由练习口径，记录量不给星星
+      const log = state.freeLogs[action.date] ?? {
+        sessions: 0,
+        questions: 0,
+        correct: 0,
+        dictationTotal: 0,
+        dictationCorrect: 0,
+      };
+      return {
+        ...state,
+        freeLogs: {
+          ...state.freeLogs,
+          [action.date]: {
+            ...log,
+            sessions: log.sessions + 1,
+            questions: log.questions + Math.max(0, Math.min(10, Math.round(action.total))),
+            correct: log.correct + Math.max(0, Math.min(10, Math.round(action.correct))),
+          },
         },
         updatedAt: new Date().toISOString(),
       };

@@ -36,6 +36,12 @@ export interface EnglishWord {
   sentenceZh: string;
 }
 
+export interface LessonReading {
+  title: string;
+  text: string;
+  questions: Array<{ q: string; options: string[]; answer: number }>;
+}
+
 export interface Lesson {
   id: string;
   subject: SubjectId;
@@ -52,6 +58,8 @@ export interface Lesson {
   dictation?: DictationWord[];
   afterClass?: Question[];
   words?: EnglishWord[];
+  /** 英语课配套短文阅读（docs/06 §3.13）：~60 词，复用已学词汇 */
+  reading?: LessonReading;
 }
 
 export interface Unit {

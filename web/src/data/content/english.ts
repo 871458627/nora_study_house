@@ -1,4 +1,5 @@
 import type { Lesson, Unit } from '../types';
+import { englishReadings } from './englishReadings';
 import {
   buildPoints,
   buildQuestions,
@@ -630,5 +631,6 @@ export const englishLessons: Lesson[] = seeds.map(seed => {
     review: { points: reviewPoints, mistakes: seed.mistakes ?? [], tip: seed.tip },
     questions: buildQuestions(seed.id, kpIds, seed.questions),
     words: seed.words,
+    reading: englishReadings[seed.id],
   };
 });
