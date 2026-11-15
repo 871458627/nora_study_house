@@ -3,7 +3,7 @@ import { useApp } from '../app/AppProvider';
 import { Mascot } from '../components/Mascot';
 import { Icon } from '../components/Icon';
 import { ProgressBar, ProgressRing } from '../components/ui';
-import { SPORTS_MAX_CUSTOM_ITEMS, type SportsItem } from '../data/sports';
+import { SPORTS_ITEMS, SPORTS_MAX_CUSTOM_ITEMS, type SportsItem } from '../data/sports';
 import {
   sportsCheckinDelta,
   sportsDayStatus,
@@ -122,8 +122,12 @@ export function SportsPage() {
     const value = valueOf(item);
     // 先用纯函数算好本次到账，通知与真实结算一致（含每日星上限、7 天大餐）
     const delta = sportsCheckinDelta(state.sports, today, item, value);
+    if (!delta) {
+      // 数值没变（含 0 值拒绝）：给一句话反馈，不再静默（缺陷清单 低2）
+      notify('数值没变，先调整一下再打卡。');
+      return;
+    }
     dispatchLocal({ type: 'sports-checkin', date: today, itemId: item.id, value });
-    if (!delta) return;
     const parts: string[] = [];
     if (delta.foodGain > 0) parts.push('+1 桃粮');
     if (delta.starGain > 0) parts.push('+1 颗星');
@@ -143,6 +147,14 @@ export function SportsPage() {
     const goal = Math.round(Number(newGoal));
     if (!name || !unit || !Number.isFinite(goal) || goal <= 0) {
       notify('项目名、单位和达标线都要填一填。');
+      return;
+    }
+    // 同名假成功反馈（缺陷清单 低2）：reducer 会静默拒绝同名，这里提前拦截
+    if (
+      state.sports.customItems.some(item => item.name === name) ||
+      SPORTS_ITEMS.some(item => item.name === name)
+    ) {
+      notify('已经有同名的项目了，换一个名字。');
       return;
     }
     dispatchLocal({

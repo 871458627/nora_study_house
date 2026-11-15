@@ -35,7 +35,7 @@ PostgreSQL 16 + Prisma           families / accounts / family_state(JSONB+revisi
 npm install                 # 根目录（workspaces）
 npm run test                # 前端 + 后端全部测试
 npm run check               # 类型检查
-npm run dev:server          # 本地 API（内存仓储模式）
+PORT=8787 npm run dev:server  # 本地 API（内存仓储模式；PORT=8787 与前端代理对齐，漏了会全部 /api 拒连）
 npm run dev:web             # 前端开发服务器
 ```
 

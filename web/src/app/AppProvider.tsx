@@ -706,6 +706,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           stateRef.current = next;
           dispatch({ type: 'replace', state: next });
           saveCachedState(next);
+          // 本机切换也要 markDirty（缺陷清单 M8）：不进推送队列的话，云端/其他
+          // 设备看不到年级变化；若云端 revision 被推进，pullOnce 会回滚本机切换，
+          // 而存档已被单副本消费、无法再恢复。登录后随下次推送同步到云端。
+          markDirty();
           notify(restoredSlice ? '已切回，进度接续如初。' : '新教材准备好了！');
           return;
         }
@@ -725,7 +729,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setGradeSwitching(false);
       }
     },
-    [notify, updateDevice],
+    [notify, updateDevice, markDirty],
   );
 
   const parentLogin = useCallback(
