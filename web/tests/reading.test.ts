@@ -20,6 +20,15 @@ describe('朗读文本 · 多音字注音替换', () => {
     expect(forSpeech('快乐的小河')).toBe('快乐的小河');
     expect(forSpeech('_min')).toBe('_min');
   });
+
+  it('多处命中一次全替换（缺陷清单第 3 轮补充）', () => {
+    expect(forSpeech('种子种地')).toBe('肿子众地');
+    expect(forSpeech('打 仗 了。')).toBe('打 仗 了。'); // 中隔空格不成词，不替换
+  });
+
+  it('替换不改动标点与空白（缺陷清单第 3 轮补充）', () => {
+    expect(forSpeech('种子，浇水。')).toBe('肿子，浇水。');
+  });
 });
 
 describe('朗读文本 · 逐句切分', () => {
@@ -34,5 +43,9 @@ describe('朗读文本 · 逐句切分', () => {
   it('无句尾标点的尾巴成句；空段被丢弃', () => {
     expect(splitReadingUnits('第一句。尾巴没有标点')).toEqual(['第一句。', '尾巴没有标点']);
     expect(splitReadingUnits('。。！')).toEqual([]);
+  });
+
+  it('分号也是切分点（缺陷清单第 3 轮补充）', () => {
+    expect(splitReadingUnits('早上起；晚上睡。')).toEqual(['早上起；', '晚上睡。']);
   });
 });
