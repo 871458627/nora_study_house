@@ -130,12 +130,16 @@ export class MemoryRepository implements Repository {
 
   readonly gradeArchives = {
     upsert: async (input: { familyId: string; gradeKey: string; snapshot: Record<string, unknown>; summary: Record<string, unknown>; now: Date }): Promise<void> => {
-      this.gradeArchiveMap.set(`${input.familyId}:${input.gradeKey}`, {
+      const key = `${input.familyId}:${input.gradeKey}`
+      const existing = this.gradeArchiveMap.get(key)
+      this.gradeArchiveMap.set(key, {
         familyId: input.familyId,
         gradeKey: input.gradeKey,
         snapshot: input.snapshot,
         summary: input.summary,
-        createdAt: input.now,
+        // 保留首次 createdAt（对齐 Prisma 语义，缺陷清单 M6）：同键覆写只更新
+        // 快照，createdAt 用于排序与外显，语义是「首次封存时间」。
+        createdAt: existing ? existing.createdAt : input.now,
       })
     },
     findByKey: async (familyId: string, gradeKey: string): Promise<GradeArchiveRecord | null> =>
