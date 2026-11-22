@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { autoSemester, gradeHasContent, gradeKeyOf, packEditionFor, SUBJECTS } from '../data/content';
 import type { Grade } from '../core/model';
 import { useApp } from '../app/AppProvider';
@@ -116,6 +117,7 @@ export function SettingsPage() {
     parentRegister,
     parentLogout,
     switchGrade,
+    exitVisitor,
     gradeSwitching,
   } = useApp();
   const [nickname, setNickname] = useState(state.profile.nickname);
@@ -127,6 +129,7 @@ export function SettingsPage() {
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
   const [authBusy, setAuthBusy] = useState(false);
+  const navigate = useNavigate();
   const [logoutAsk, setLogoutAsk] = useState(false);
 
   useEffect(() => {
@@ -254,6 +257,10 @@ export function SettingsPage() {
         notify('注册成功，已登录。');
       }
       setAuthPassword('');
+      // 登录/注册成功但本机未完成引导（访客模式下进的设置页）：衔接到引导流程。
+      // 否则 canLearn 恒 false，孩子被学习门禁锁死（生产「登录后仍提示登录」根因）。
+      exitVisitor();
+      if (!state.onboarded) navigate('/onboarding');
     } catch (error) {
       setAuthError(authErrorText(error));
     } finally {
@@ -266,6 +273,10 @@ export function SettingsPage() {
     try {
       await parentLogout(mode);
       setAuthPassword('');
+      // 登录/注册成功但本机未完成引导（访客模式下进的设置页）：衔接到引导流程。
+      // 否则 canLearn 恒 false，孩子被学习门禁锁死（生产「登录后仍提示登录」根因）。
+      exitVisitor();
+      if (!state.onboarded) navigate('/onboarding');
       setLogoutAsk(false);
       notify(
         mode === 'wipe'
