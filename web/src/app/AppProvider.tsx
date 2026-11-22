@@ -736,10 +736,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     async ({ username, password }: AuthFormsInput) => {
       await loginRequest(username, password);
       setParentAccount(currentAccount());
+      // 未初始化设备登录（生产环境「登录后仍提示登录」的根因，docs/06 §3.10）：
+      // 立即拉云端——有数据 adopt（onboarded 翻真、跳过引导剩余、补本机 PIN），
+      // 无数据由调用方进引导完成昵称/PIN。拉取失败不阻断登录语义。
+      if (!stateRef.current.onboarded) {
+        try {
+          const remote = await runWithAuthRetry(() => fetchRemote());
+          if (remote.data) adoptRemote(remote);
+        } catch {
+          // 拉取失败可稍后重试；此时已登录，仅未完成引导
+        }
+      }
       resumeSyncAfterLogin();
     },
-    [resumeSyncAfterLogin],
-  );
+    [adoptRemote, resumeSyncAfterLogin, runWithAuthRetry],
+);
 
   const parentRegister = useCallback(
     async ({ username, password }: AuthFormsInput) => {

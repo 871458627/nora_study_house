@@ -64,6 +64,7 @@ export function OnboardingPage() {
     unlockParentSession,
     onboard,
     enterVisitor,
+    parentAccount,
   } = useApp();
   const navigate = useNavigate();
   const [phase, setPhase] = useState<'bind' | 'profile'>('bind');
@@ -140,6 +141,24 @@ export function OnboardingPage() {
   const startVisitor = () => {
     enterVisitor();
     navigate('/');
+  };
+
+  /** 已登录（从设置页来）：接上进度——adopt 则整体切 PIN 卡，空则进引导。 */
+  const pullThenRoute = async () => {
+    setBusy(true);
+    try {
+      const outcome = await bindPull();
+      setPullFailed(false);
+      if (outcome === 'empty') {
+        setPhase('profile');
+        setStep(0);
+      }
+    } catch {
+      setBindError('');
+      setPullFailed(true);
+    } finally {
+      setBusy(false);
+    }
   };
 
   const submitBind = async () => {
@@ -250,7 +269,21 @@ export function OnboardingPage() {
       </div>
 
       <div className="onboarding-card card">
-        {phase === 'bind' && !pullFailed && (
+        {phase === 'bind' && !pullFailed && parentAccount && (
+          <div className="onboarding-form">
+            <span className="step-label">第 1 步 · 家长绑定</span>
+            <h2>已登录：{parentAccount.username}</h2>
+            <p className="field-hint">从设置页登录过来的。点下面接上这台设备的进度；没有云端数据就直接开始引导。</p>
+            <button className="btn btn-primary full" type="button" disabled={busy} onClick={() => void pullThenRoute()}>
+              {busy ? '正在接上…' : '接上进度 / 开始引导'}
+            </button>
+            <button className="btn btn-ghost full" type="button" disabled={busy} onClick={startVisitor}>
+              暂不接上，先逛逛
+            </button>
+          </div>
+        )}
+
+        {phase === 'bind' && !pullFailed && !parentAccount && (
           <div className="onboarding-form">
             <span className="step-label">第 1 步 · 家长绑定</span>
             <h2>{authMode === 'login' ? '登录家长账号' : '注册家庭账号'}</h2>
